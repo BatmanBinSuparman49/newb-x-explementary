@@ -3,14 +3,32 @@
     "default": {
       "water_surface_transparency": 0.65
     },
+    "crimson_forest" : {
+         "fog_identifier" : "new_fogs:fog_crimson_forest",
+         "fog_ids_to_merge" : [ "new_fogs:fog_crimson_forest" ],
+         "inherit_from_prior_fog" : false,
+         "water_surface_color" : "#905957",
+         "water_surface_transparency": 0.5
+    },
+    "warped_forest" : {
+         "fog_identifier" : "new_fogs:fog_warped_forest",
+         "fog_ids_to_merge" : [ "new_fogs:fog_warped_forest" ],
+         "inherit_from_prior_fog" : false,
+         "water_surface_color" : "#905957",
+         "water_surface_transparency": 0.5
+    },          
     "swampland": {
       "water_surface_transparency": 0.94
     },
     "swampland_mutated": {
       "water_surface_transparency": 0.94
     },
-    "the_end": {
-      "fog_identifier": "newb:fog_the_end"
+    "the_end" : {
+         "fog_identifier" : "new_fogs:fog_the_end",
+         "fog_ids_to_merge" : [ "new_fogs:fog_the_end" ],
+         "inherit_from_prior_fog" : false,
+         "water_surface_color" : "#A045E8",
+         "water_surface_transparency" : 0.45
     }
   }
 }

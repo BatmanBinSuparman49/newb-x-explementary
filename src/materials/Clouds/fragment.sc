@@ -4,6 +4,8 @@ $input v_color0
   $input v_color1, v_color2, v_fogColor
 #endif
 
+uniform vec4 FogAndDistanceControl;
+
 #include <bgfx_shader.sh>
 #include <newb/main.sh>
 
@@ -25,11 +27,13 @@ void main() {
         vec4 color2 = renderCloudsRounded(vDir, offsetPos, v_color1.a, v_color2.a*2.0, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_LAYER2_));
         color = mix(color2, color, 0.2 + 0.8*color.a);
       #endif
-
+      
+      float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
+      if (rain < 0.5) {
       #ifdef NL_AURORA
         color += renderAurora(v_color0.xyz, v_color2.a, v_color1.a, v_fogColor)*(1.0-0.95*color.a);
       #endif
-
+      }
       color.a *= v_color0.a;
     #else
       vDir.xz *= 0.3 + v_color0.w; // height parallax

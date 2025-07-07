@@ -2,13 +2,14 @@ $input a_texcoord0, a_position
 #ifdef INSTANCING
   $input i_data0, i_data1, i_data2, i_data3
 #endif
-$output v_posTime, v_texcoord0
+$output v_posTime, v_texcoord0, v_fogColor
 
 #include <bgfx_shader.sh>
 #include <newb/main.sh>
 
 //uniform vec4 FogColor;
 uniform vec4 ViewPositionAndTime;
+uniform vec4 FogColor;
 
 void main() {
   #ifdef INSTANCING
@@ -32,5 +33,6 @@ void main() {
 
   v_texcoord0 = 2.0*a_texcoord0;
   v_posTime = vec4(wPos, ViewPositionAndTime.w);
+  v_fogColor = FogColor.rgb;
   gl_Position = mul(u_viewProj, vec4(pos, 1.0));
 }

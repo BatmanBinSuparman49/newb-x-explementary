@@ -6,6 +6,7 @@ tool/lib/
 tool/__pycache__/
 .venv
 venv
+.vscode
 
 # ignore files
 copy.sh

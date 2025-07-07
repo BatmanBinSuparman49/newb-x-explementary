@@ -1,0 +1,57 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "minecraft:blue_flame_particle",
+      "basic_render_parameters": {
+        "material": "particles_blend",
+        "texture": "textures/reimagined/particle/blue_flame"
+      }
+    },
+    "events": {
+      "glow": {
+        "particle_effect": {
+          "effect": "spark:blue_flame_glow",
+          "type": "emitter"
+        }
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_manual": {
+        "max_particles": 100
+      },
+      "minecraft:particle_lifetime_events": {
+        "timeline": {
+          "0.01": ["glow"]
+        }
+      },
+      "minecraft:emitter_lifetime_expression": {
+        "activation_expression": 1,
+        "expiration_expression": 0
+      },
+      "minecraft:emitter_shape_sphere": {
+        "offset": [0, 0.15, 0],
+        "radius": 0.1
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": 1.75
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [0.3, 0.34],
+        "facing_camera_mode": "lookat_y",
+        "uv": {
+          "texture_width": 32,
+          "texture_height": 32,
+          "flipbook": {
+            "base_UV": [0, 0],
+            "size_UV": [32, 32],
+            "step_UV": [0, 0],
+            "frames_per_second": 15,
+            "max_frame": 2,
+            "loop": true
+          }
+        }
+      }
+    }
+  }
+}

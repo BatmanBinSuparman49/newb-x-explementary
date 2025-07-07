@@ -1,0 +1,34 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "new_fogs:fog_swampland_mutated"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 0.76,
+        "fog_end": 0.92,
+        "fog_color": "#9FC5B3",
+        "render_distance_type": "render"
+      },
+      "water": {
+        "fog_start": 0.0,
+        "fog_end": 90,
+        "fog_color": "#5F7D6D",
+        "render_distance_type": "fixed",
+        "transition_fog": {
+          "init_fog": {
+            "fog_start": 0.0,
+            "fog_end": 0.01,
+            "fog_color": "#5F7D6D",
+            "render_distance_type": "fixed"
+          },
+          "min_percent": 0.25,
+          "mid_seconds": 2,
+          "mid_percent": 0.6,
+          "max_seconds": 7
+        }
+      }
+    }
+  }
+}

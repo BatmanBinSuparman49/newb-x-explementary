@@ -17,7 +17,7 @@ vec4 nlRefl(
   nl_skycolor skycol, nl_environment env, inout vec4 color, vec2 lit, vec3 tiledCpos, float camDist,
   vec3 wPos, vec3 viewDir, vec3 torchColor, vec3 FOG_COLOR, float renderDist, highp float t
 ) {
-  vec4 wetRefl = vec4(0.0,0.0,0.0,0.0);
+  vec4 wetRefl = vec4(0.0, 0.0, 0.0, 0.0);
 
   #ifndef NL_GROUND_REFL
   if (env.rainFactor > 0.0) {

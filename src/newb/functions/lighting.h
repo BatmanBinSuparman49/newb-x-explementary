@@ -61,7 +61,7 @@ vec3 nlLighting(
   } else {
     // overworld lighting
 
-    float dayFactor = min(dot(FOG_COLOR.rgb, vec3(0.5,0.4,0.4))*(1.0 + 1.9*env.rainFactor), 1.0); // use env.dayFactor here?
+    float dayFactor = min(dot(FOG_COLOR.rgb, vec3(0.5,0.4,0.4))*(1.0 + 1.9*env.rainFactor), 1.0);
     float nightFactor = 1.0-dayFactor*dayFactor;
     float rainDim = min(FOG_COLOR.g, 0.25)*env.rainFactor;
     float lightIntensity = NL_SUN_INTENSITY*(1.0 - rainDim)*(1.0 + NL_NIGHT_BRIGHTNESS*nightFactor);
@@ -73,9 +73,9 @@ vec3 nlLighting(
     light += mix(skycol.horizon, skycol.zenith, 0.5+uv1.y-0.5*lit.y)*(lit.y*(3.0-2.0*uv1.y)*(1.3 + (4.0*nightFactor) - rainDim));
 
     // shadow cast by top light
-    float shadow = step(0.93, uv1.y);
-    shadow = max(shadow, (1.0 - NL_SHADOW_INTENSITY + (0.6*NL_SHADOW_INTENSITY*nightFactor))*lit.y);
-    shadow *= shade > 0.8 ? 1.0 : 0.8;
+    float shadow = step(0.97, uv1.y);
+    shadow = max(shadow, (0.7 - 0.5*NL_SHADOW_INTENSITY + (0.3*NL_SHADOW_INTENSITY*nightFactor))*lit.y);
+    shadow *= shade > 0.8 ? 1.0 : 0.9;
 
     // shadow cast by simple cloud
     #ifdef NL_CLOUD_SHADOW
@@ -152,15 +152,11 @@ vec3 nlEntityLighting(nl_environment env, vec3 pos, vec4 normal, mat4 world, vec
 }
 
 float nlEntityEdgeHighlight(vec4 edgemap) {
-  #ifdef NL_ENTITY_EDGE_HIGHLIGHT
-    vec2 len = min(abs(edgemap.xy),abs(edgemap.zw));
-    len *= len;
-    len *= len;
-    float ambient = len.x + len.y*(1.0-len.x);
-    return NL_ENTITY_BRIGHTNESS + ambient*NL_ENTITY_EDGE_HIGHLIGHT;
-  #else
-    return 1.0;
-  #endif
+  vec2 len = min(abs(edgemap.xy),abs(edgemap.zw));
+  len *= len;
+  len *= len;
+  float ambient = len.x + len.y*(1.0-len.x);
+  return NL_ENTITY_BRIGHTNESS + ambient*NL_ENTITY_EDGE_HIGHLIGHT;
 }
 
 vec4 nlEntityEdgeHighlightPreprocess(vec2 texcoord) {
@@ -168,14 +164,15 @@ vec4 nlEntityEdgeHighlightPreprocess(vec2 texcoord) {
   return 2.0*step(edgeMap, vec4_splat(0.5)) - 1.0;
 }
 
-vec4 nlLavaNoise(vec3 tiledCpos, float t) {
+vec3 nlLavaNoise(vec3 tiledCpos, float t) {
   t *=  NL_LAVA_NOISE_SPEED;
-  vec3 p = NL_CONST_PI_HALF*tiledCpos;
-  float d = fastVoronoi2(4.3*tiledCpos.xz + t, 2.0);
-  float n = sin(2.0*(p.x+p.y+p.z) + 1.7*sin(2.0*d + 4.0*(p.x-p.z)) + 4.0*t);
-  n = 0.3*d*d +  0.7*n*n;
-  n *= n;
-  return vec4(mix(vec3(0.7, 0.4, 0.0), vec3_splat(1.5), n),n);
+  float n = fastVoronoi2(1.12*tiledCpos.xz + t, 1.8);
+  n *= fastVoronoi2(4.48*tiledCpos.xz + t, 1.5);
+  n = 1.0 - n*n*n;
+  n = 1.0 - n*n;
+  float n2 = n*n;
+  n2 *= n2;
+  return vec3(n, n2, n2);
 }
 
 #endif

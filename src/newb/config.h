@@ -29,7 +29,7 @@
 
 /* Color correction */
 #define NL_TONEMAP_TYPE 9              // 1:Exponential, 2:Reinhard, 3:Extended Reinhard, 4:ACES 5:John Habel's filmic (used in BSBE) 
-#define NL_GAMMA 1.3                  // 0.3 low ~ 2.0 high
+#define NL_GAMMA 1.2                  // 0.3 low ~ 2.0 high
 //#define NL_EXPOSURE 1.3              // [toggle] 0.5 dark ~ 3.0 bright
 #define NL_SATURATION 0.9            // [toggle] 0.0 grayscale ~ 4.0 super saturated
 //#define NL_TINT                      // [toggle] enable light/dark tone tinting
@@ -40,7 +40,7 @@
 #define NL_SUN_INTENSITY 3.8   // 0.5 weak ~ 5.0 bright
 #define NL_TORCH_INTENSITY 1.1  // 0.5 weak ~ 3.0 bright
 #define NL_NIGHT_BRIGHTNESS 0.0 // 0.0 dark ~ 2.0 bright
-#define NL_CAVE_BRIGHTNESS 0.9  // 0.0 dark ~ 2.0 bright
+#define NL_CAVE_BRIGHTNESS 0.8  // 0.0 dark ~ 2.0 bright
 #define NL_SHADOW_INTENSITY 0.5 // 0.0 no shadow ~ 1.0 strong shadow
 //#define NL_BLINKING_TORCH     // [toggle] flickering light
 //#define NL_CLOUD_SHADOW       // [toggle] cloud shadow (simple clouds only)
@@ -95,7 +95,7 @@
 
 /* Ore glow intensity */
 #define NL_GLOW_TEX 3.0           // 0.4 weak ~ 8.0 bright
-//#define NL_GLOW_SHIMMER 0.8       // [toggle] 0.1 subtle ~ 1.0 100% shimmer
+#define NL_GLOW_SHIMMER 0.8       // [toggle] 0.1 subtle ~ 1.0 100% shimmer
 #define NL_GLOW_SHIMMER_SPEED 1.0 // 0.5 slow - 2.0 fast
 #define NL_GLOW_LEAK 0.4        // [toggle] 0.08 subtle ~ 1.0 100% brightness of NL_GLOW_TEX
 

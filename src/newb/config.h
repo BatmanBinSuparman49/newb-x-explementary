@@ -29,7 +29,7 @@
 
 /* Color correction */
 #define NL_TONEMAP_TYPE 9              // 1:Exponential, 2:Reinhard, 3:Extended Reinhard, 4:ACES 5:John Habel's filmic (used in BSBE) 
-#define NL_GAMMA 0.9                  // 0.3 low ~ 2.0 high
+#define NL_GAMMA 1.1                  // 0.3 low ~ 2.0 high
 //#define NL_EXPOSURE 1.3              // [toggle] 0.5 dark ~ 3.0 bright
 #define NL_SATURATION 1.0            // [toggle] 0.0 grayscale ~ 4.0 super saturated
 //#define NL_TINT                      // [toggle] enable light/dark tone tinting
@@ -123,7 +123,7 @@
 #define NL_UNDERWATER_TINT vec3(0.9, 1.3, 0.9) // fog tint color when underwater
 
 /* Cloud type */
-#define NL_CLOUD_TYPE 2 // 0:vanilla, 1:soft, 2:rounded, 3:realistic, 4:PC killer
+#define NL_CLOUD_TYPE 3 // 0:vanilla, 1:soft, 2:rounded, 3:realistic, 4:PC killer
 
 /* Vanilla cloud settings - make sure to remove clouds.png when using this */
 #define NL_CLOUD0_THICKNESS 2.1      // 0.5 slim ~ 8.0 fat

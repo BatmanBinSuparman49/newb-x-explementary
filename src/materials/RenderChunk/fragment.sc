@@ -178,8 +178,8 @@ void main() {
 
   float shadow = smoothstep(0.875,0.860, pow(v_lightmapUV.y,2.0));
   shadow = mix(shadow, 0.0, pow(v_lightmapUV.x * 1.2, 6.0)); 
-  float shadowFactor = 1.0 - 0.08 * shadow;
-  shadowFactor = max(shadowFactor, 0.2); 
+  float shadowFactor = 1.0 - 0.008 * shadow;
+  shadowFactor = max(shadowFactor, 0.3); 
   diffuse.rgb *= shadowFactor;
 
   // side block shadows

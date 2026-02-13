@@ -11,6 +11,11 @@ uniform vec4 RenderChunkFogAlpha;
 uniform vec4 FogAndDistanceControl;
 uniform vec4 ViewPositionAndTime;
 uniform vec4 FogColor;
+uniform vec4 CameraPosition;
+uniform vec4 TimeOfDay;
+
+// old lightmap fix 
+// #define a_texcoord1 vec2(fract(a_texcoord1.x*15.9375),floor(a_texcoord1.x*15.9375)*0.0625)
 
 void main() {
   #ifdef INSTANCING
@@ -18,6 +23,12 @@ void main() {
   #else
     mat4 model = u_model[0];
   #endif
+
+    vec4 whatTime = timeofday(TimeOfDay.x);
+      float night = whatTime.x;
+      float day   = whatTime.w;
+      float dusk  = whatTime.z;
+      float dawn  = whatTime.y;
 
   vec3 worldPos = mul(model, vec4(a_position, 1.0)).xyz;
 
@@ -53,7 +64,7 @@ void main() {
   vec3 bPos = fract(cPos);
   vec3 tiledCpos = fract(cPos*0.0625);
 
-  vec2 uv1 = a_texcoord1;
+  vec2 uv1 = fract(a_texcoord1.y*vec2(256.0, 4096.0));
   vec2 lit = uv1*uv1;
 
   bool isColored = color.r != color.g || color.r != color.b;
@@ -64,6 +75,14 @@ void main() {
     bool isTree = (isColored && (bPos.x+bPos.y+bPos.z < 0.001)) || color.a == 0.0;
   #else
     bool isTree = false;
+  #endif
+
+  float isLeaf;
+
+  #if defined(ALPHA_TEST) && !defined(RENDER_AS_BILLBOARDS)
+    isLeaf = float((isColored && (bPos.x + bPos.y + bPos.z < 0.001)) ||(color.a == 0.0));
+  #else
+    isLeaf = 0.0;
   #endif
 
   nl_environment env = nlDetectEnvironment(FogColor.rgb, FogAndDistanceControl.xyz);
@@ -86,7 +105,7 @@ void main() {
   #endif
 
   vec3 torchColor; // modified by nl_lighting
-  vec3 light = nlLighting(skycol, env, worldPos, torchColor, a_color0.rgb, FogColor.rgb, uv1, lit, isTree, shade, t);
+  vec3 light = nlLighting(skycol, env, worldPos, torchColor, a_color0.rgb, FogColor.rgb, uv1, lit, isTree, shade, t, night);
 
   #if defined(ALPHA_TEST) && (defined(NL_PLANTS_WAVE) || defined(NL_LANTERN_WAVE)) && !defined(RENDER_AS_BILLBOARDS)
     nlWave(worldPos, light, env.rainFactor, uv1, lit, a_texcoord0, bPos, a_color0, cPos, tiledCpos, t, isColored, camDis, isTree);
@@ -163,12 +182,12 @@ void main() {
   v_extra = vec4(shade, worldPos.y, water, shimmer);
   v_refl = refl;
   v_texcoord0 = a_texcoord0;
-  v_lightmapUV = a_texcoord1;
+  v_lightmapUV = uv1;
   v_color0 = color;
   v_color1 = a_color0;
   v_fog = fogColor;
   v_position = a_position;
-  v_wpos = worldPos.xyz;
+  v_wpos = vec4(worldPos.xyz, camDis);
 
   #else
 

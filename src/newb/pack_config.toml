@@ -1,20 +1,20 @@
-name = "Newb X (name not decided yet)"
-version = [0, 15, 0]
-min_supported_mc_version = [1, 21, 20]
-description = '''
+name = "Newb Explementary Edition"
+version = [0, 2, 0]
+min_supported_mc_version = [1, 21, 130]
+description = '''A Newb variant by BatmanBinSuparman49 enhancing Minecraft's visuals while keeping vanilla aesthetics.
 §c%w
-§7- A newb variant by BatmanBinSuparman!
+§7- 
 %v
 §3https://devendrn.github.io/newb-shader/
 ''' # %w = patch warning, %v = version
-authors = ["devendrn"]
+authors = ["BatmanBinSuparman49", "devendrn"]
 url = "https://devendrn.github.io/newb-shader/"
-uuid = "cb1aa631-a2df-4521-a2bd-adef865e3fd9" # Use https://www.uuidgenerator.net/version4
-materials = ["Sky", "RenderChunk", "Actor", "EndSky", "Clouds", "SunMoon", "Weather", "ItemInHandTextured", "ItemInHandColor", "Stars"]
+uuid = "d35d2d8a-4018-41f1-b0e0-a4e96697857b" # Use https://www.uuidgenerator.net/version4
+materials = ["Actor", "Sky", "RenderChunk", "EndSky", "Clouds", "SunMoon", "Weather", "ItemInHandTextured", "ItemInHandColor", "Stars"]
 
 [info] 
 copyright = '''
-Copyright © 2024 %a, and "Newb Shader" Contributors
+Copyright © 2025 %a, and "Newb Shader" Contributors
 
 This compiled "Newb Shader" resource pack (source code: https://github.com/devendrn/newb-x-mcbe under MIT License) is licensed under CC BY-ND 4.0 (https://creativecommons.org/licenses/by-nd/4.0/). Redistribute only unmodified copies with proper attribution to "Newb Shader" and variant creators (if any). Do not distribute derivatives.
 
@@ -23,23 +23,60 @@ You can compile the shader from source and distribute the result under your own 
 Contact (Discord Server): https://discord.gg/newb-community-844591537430069279
 ''' # %a = authors
 credits = '''
+Contributors/helpers - LynxiumMC
+Assets by devendrn and Ale Graphics
 '''
 
 # subpacks are arranged in left to right order
 # right-most subpack is enabled by default
 
 [[subpack]]
+define = "NO_WAVE_NO_FOG"
+materials = ["RenderChunk"]
+description = '''
+Removes both fog and wave
+'''
+
+[[subpack]]
+define = "NO_FOG"
+materials = ["RenderChunk"]
+description = '''
+Removes fog
+'''
+
+[[subpack]]
+define = "NO_WAVE"
+materials = ["RenderChunk"]
+description = '''
+Removes wave
+'''
+
+[[subpack]]
+define = "NO_SHOOTING_STARS"
+materials = ["Sky"]
+description = '''
+Removes shooting stars 
+'''
+
+[[subpack]]
 define = "ROUNDED_CLOUDS"
 materials = ["Clouds"]
 description = '''
-Rounded Clouds
+Rounded Complementary style clouds
 '''
 
 [[subpack]]
 define = "NO_AURORA"
-materials = ["Clouds"]
+materials = ["Sky"]
 description = '''
-No Aurora 
+Removes Aurora
+'''
+
+[[subpack]]
+define = "NO_CHUNK_ANIM"
+materials = ["RenderChunk"]
+description = '''
+Removes Chunk loading animation
 '''
 
 [[subpack]]

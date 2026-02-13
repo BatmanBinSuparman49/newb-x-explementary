@@ -1,7 +1,7 @@
 #ifndef DETECTION_H
 #define DETECTION_H
 
-
+#include "constants.h"
 
 struct nl_environment {
   bool end;

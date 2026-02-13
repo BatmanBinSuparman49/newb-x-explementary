@@ -122,7 +122,7 @@ void nlWave(
         wave *= bPos.y > 0.0 ? bPos.y-1.0 : 0.0;
       }
 
-      float phaseDiff = dot(cPos,vec3_splat(NL_CONST_PI_QUART)) + fastRand(tiledCpos.xz + tiledCpos.y);
+      float phaseDiff = dot(cPos,vec3_splat(PI_QUART)) + fastRand(tiledCpos.xz + tiledCpos.y);
       wave *= 1.0 + mix(
         sin(t*NL_WAVE_SPEED + phaseDiff),
         sin(t*NL_WAVE_SPEED*1.5 + phaseDiff),

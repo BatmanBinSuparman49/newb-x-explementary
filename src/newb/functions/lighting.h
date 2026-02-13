@@ -28,7 +28,7 @@ vec3 sunLightTint(float dayFactor, float rain, vec3 FOG_COLOR) {
 
 vec3 nlLighting(
   nl_skycolor skycol, nl_environment env, vec3 wPos, out vec3 torchColor, vec3 COLOR, vec3 FOG_COLOR,
-  vec2 uv1, vec2 lit, bool isTree, float shade, highp float t
+  vec2 uv1, vec2 lit, bool isTree, float shade, highp float t, float night
 ) {
   // all of these will be multiplied by tex uv1 in frag so functions should be divided by uv1 here
 
@@ -41,7 +41,7 @@ vec3 nlLighting(
   } else if (env.nether) {
     torchColor = NL_NETHER_TORCH_COL;
   } else {
-    torchColor = NL_OVERWORLD_TORCH_COL;
+    torchColor = mix(NL_OVERWORLD_TORCH_COL, vec3(0.4039, 0.3804, 0.9804), night);
   }
 
   float torchAttenuation = (NL_TORCH_INTENSITY*uv1.x)/(0.5-0.45*lit.x);
@@ -63,15 +63,15 @@ vec3 nlLighting(
 
     float dayFactor = min(dot(FOG_COLOR.rgb, vec3(0.5,0.4,0.4))*(1.0 + 1.9*env.rainFactor), 1.0);
     float nightFactor = 1.0-dayFactor*dayFactor;
-    float rainDim = min(FOG_COLOR.g, 0.25)*env.rainFactor;
+    float rainDarkness = 1.0 - (env.rainFactor * 0.6); // 30% darker at full rain
+    float rainDim = min(FOG_COLOR.g, 0.25)*env.rainFactor * rainDarkness;
     float lightIntensity = NL_SUN_INTENSITY*(1.0 - rainDim)*(1.0 + NL_NIGHT_BRIGHTNESS*nightFactor);
 
     // min ambient in caves
     light = vec3_splat((1.35+NL_CAVE_BRIGHTNESS)*(1.0-uv1.x)*(1.0-uv1.y));
 
     // sky ambient
-    light += mix(skycol.horizon, skycol.zenith, 0.5+uv1.y-0.5*lit.y)*(lit.y*(3.0-2.0*uv1.y)*(1.3 + (4.0*nightFactor) - rainDim));
-
+    light += mix(skycol.horizon, skycol.zenith, 0.5+uv1.y-0.5*lit.y)*(lit.y*(3.0-2.0*uv1.y)*(1.3 + (4.0*nightFactor) - rainDim)) * (1.0 - rainDim * 0.7);
     // shadow cast by top light
     float shadow = step(0.97, uv1.y);
     shadow = max(shadow, (0.7 - 0.5*NL_SHADOW_INTENSITY + (0.3*NL_SHADOW_INTENSITY*nightFactor))*lit.y);
@@ -98,7 +98,7 @@ vec3 nlLighting(
 
   // brighten tree leaves
   if (isTree) {
-    light *= 1.25;
+    light *= 1.75;
   }
 
   return light;
@@ -112,7 +112,7 @@ void nlUnderwaterLighting(inout vec3 light, inout vec3 pos, vec2 lit, vec2 uv1, 
   }
   light *= mix(normalize(horizonCol), vec3_splat(0.6), lit.y*0.6);
   #ifdef NL_UNDERWATER_WAVE
-    pos.xy += NL_UNDERWATER_WAVE*min(0.05*pos.z,0.6)*sin(t*1.2 + dot(cPos,vec3_splat(NL_CONST_PI_HALF)));
+    pos.xy += NL_UNDERWATER_WAVE*min(0.05*pos.z,0.6)*sin(t*1.2 + dot(cPos,vec3_splat(PI_HALF)));
   #endif
 }
 

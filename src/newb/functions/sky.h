@@ -68,7 +68,60 @@ vec3 getHorizonEdgeCol(vec3 horizonCol, float rainFactor, vec3 FOG_COLOR) {
   return horizonCol;
 }
 
-// 1D sky with three color gradient, warning: gradient drastically decreased with the help of amg_the_impostor
+vec4 timeofday(float dayTime){
+    float day = smoothstep(0.77,0.82,dayTime)+(smoothstep(0.23, 0.18, dayTime)); 
+    float night = smoothstep(0.22,0.27,dayTime) * (1.0 - smoothstep(0.73, 0.78, dayTime));
+    float dawn = smoothstep(0.695, 0.745, dayTime) * (1.0 - smoothstep(0.78, 0.83, dayTime));
+    float dusk = smoothstep(0.16, 0.21, dayTime) * (1.0 - smoothstep(0.255, 0.305, dayTime));
+
+  return vec4(night, dawn, dusk, day);
+}
+
+/*vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn, float isbloom, float hardnessfactor, float glowexp){
+    float sunDot = saturate(dot(sunDir, viewDir));
+    float core =   pow(smoothstep(0.998, 1.0, sunDot), hardnessfactor);
+    float corona = pow(sunDot, 64.0) * max(0.8 - 0.7 * night, 0.0);
+    float outerGlow = pow(sunDot, glowexp) * max(0.3 - 0.2 * night, 0.0);
+    float sun = 0.0;
+    if(isbloom == 1){
+    sun = core + corona + outerGlow;
+    }else{
+      sun = core + corona;
+    }
+    vec3 sunCol   = vec3(1.0, 1.0, 1.0);   
+    vec3 dawnCol  = vec3(0.9686, 0.3098, 0.3647);     
+
+    sunCol = mix(sunCol, dawnCol,saturate(dawn+dusk));
+
+    return sunCol * sun;
+}*/
+
+vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
+    float sunDot = saturate(dot(sunDir, viewDir));
+    float core = pow(smoothstep(0.998, 1.0, sunDot), 0.48);
+    float corona = pow(sunDot, 64.0) * max(0.8 - 0.7 * night, 0.0);
+    float outerGlow = pow(sunDot, 8.0) * max(0.3 - 0.2 * night, 0.0);
+    float sun = core + corona + outerGlow;
+    vec3 sunCol   = vec3(1.0, 0.98, 0.95);   
+    vec3 dawnCol  = vec3(1.0, 0.52, 0.278);     
+
+    sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
+
+    return sunCol * sun;
+}
+
+vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
+    float moonDot = saturate(dot(moonDir, viewDir));
+    float core =   pow(smoothstep(0.998, 1.0, moonDot), 0.22);
+    float corona = pow(moonDot, 32.0) * max(0.8 - 0.7 * night, 0.0);
+    float outerGlow = pow(moonDot, 2.0) * max(0.3 - 0.2 * night, 0.0);
+    float moon = core + corona + outerGlow;
+    vec3 moonCol = vec3(1.0, 1.0, 1.0);
+
+    return moonCol * moon;
+}
+
+// 1D sky with three color gradient
 vec3 renderOverworldSky(nl_skycolor skycol, vec3 viewDir) {
   float h = 1.0 - viewDir.y * viewDir.y;
   float hsq = h * h;
@@ -76,9 +129,8 @@ vec3 renderOverworldSky(nl_skycolor skycol, vec3 viewDir) {
     hsq = 0.4 + 0.6 * hsq * hsq;
   }
 
-  // Drastically reduced gradients (per Discord instructions)
-  float gradient1 = hsq * 0.3;           // Weak gradient (originally h^16)
-  float gradient2 = 0.05 * gradient1 + 0.3 * hsq;  // Extremely soft mix (0.05/0.3)
+  float gradient1 = hsq * 0.3;  // (originally h^16)
+  float gradient2 = 0.05 * gradient1 + 0.3 * hsq; 
 
   vec3 sky = mix(skycol.horizon, skycol.horizonEdge, gradient1);
   sky = mix(skycol.zenith, skycol.horizon, gradient2);
@@ -97,6 +149,12 @@ vec3 getSunBloom(float viewDirX, vec3 horizonEdgeCol, vec3 FOG_COLOR) {
   sunBloom = 0.5*spread + sunBloom*sunBloom*sunBloom*1.3;
 
   return NL_MORNING_SUN_COL * horizonEdgeCol * (sunBloom * factor * factor);
+}
+
+vec3 getPuaColor(float angle, float t) {
+    // Oscilación más suave y gradual en el cambio de color de las púas
+    float mixFactor = 0.5 + 0.5 * sin(angle * 8.0 + t * 1.5);
+    return mix(PUA_COLOR_1, PUA_COLOR_2, mixFactor);
 }
 
 //end sky
@@ -124,7 +182,27 @@ vec3 renderEndSky(vec3 horizonCol, vec3 zenithCol, vec3 viewDir, float t) {
   sky += (0.1*streaks + 2.0*g*g*g + h*h*h)*vec3(1.1, 0.4, 1.7);
 
   return sky;
-}
+} 
+/*
+vec3 renderEndSky(vec3 horizonCol, vec3 zenithCol, vec3 v, float t){
+  vec3 sky = vec3(0.0,0.0,0.0);
+  v.y = smoothstep(-0.9,1.18,abs(v.y));
+  v.x += 0.0*sin(0.0*v.y - t + v.z);
+
+  float a = atan2(v.x,v.z);
+
+  float s = sin(a*15.0 + 0.4*t);
+  s = s*s;
+  s *= 0.09 + 0.32 *sin(a*13.0 - 1.1*t);
+  float g = smoothstep(0.89-s, -1.5, v.y);
+
+  float f = (1.0*g + 1.33*smoothstep(1.2,-0.18,v.y));
+  float h = (1.2*g + 0.58*smoothstep(0.6,-0.4,v.y));
+  sky += mix(zenithCol, horizonCol, f*f);
+  sky += (g*g*0.4 + 0.5*h*h*h*h*h)*vec3(7.0,0.4,6.0);
+  
+  return sky;
+} */
 
 vec3 nlRenderSky(nl_skycolor skycol, nl_environment env, vec3 viewDir, vec3 FOG_COLOR, float t) {
   vec3 sky;
@@ -142,13 +220,13 @@ vec3 nlRenderSky(nl_skycolor skycol, nl_environment env, vec3 viewDir, vec3 FOG_
         float a = atan2(viewDir.x, viewDir.z);
         float grad = 0.5 + 0.5*viewDir.y;
         grad *= grad;
-        float spread = (0.5 + 0.5*sin(3.0*a + 0.2*t + 2.0*sin(5.0*a - 0.4*t)));
-        spread *= (0.5 + 0.5*sin(3.0*a - sin(0.5*t)))*grad;
+        float spread = (0.5 + 0.5*sin(30.0*a + 0.3*t + 3.0*sin(15.0*a - 0.6*t)));
+        spread *= (0.5 + 0.5*sin(30.0*a - sin(1.2*t)))*grad;
         spread += (1.0-spread)*grad;
         float streaks = spread*spread;
         streaks *= streaks;
-        streaks = (spread + 3.0*grad*grad + 4.0*streaks*streaks);
-        sky += 2.0*streaks*skycol.horizon;
+        streaks = (spread + 3.0*grad*grad + 8.0*streaks*streaks);
+        sky += 3.0*streaks*skycol.horizon;
       } else 
     #endif
     if (!env.nether) {
@@ -215,6 +293,25 @@ vec3 getSkyRefl(nl_skycolor skycol, nl_environment env, vec3 viewDir, vec3 FOG_C
   return refl;
 } 
 
+// Falling stars by i11212
+highp float randS(highp vec2 x){
+    return fract(sin(dot(x, vec2(11,57))) * 4e3);
+}
+
+highp float star(highp vec2 x, highp float speed, highp float density, highp float time){
+    x = mul(x, mtxFromCols(vec2(cos(0.0), sin(0.0)), vec2(sin(0.0), -cos(0.5))));
+    x.y += time * speed;  // Use speed parameter
+    
+    highp float shape = (1.0 - length(fract(x - vec2(0, 0.5)) - 0.5));
+    x *= vec2(1, 0.1);
+    
+    highp vec2 fr = fract(x);
+    highp float random = step(randS(floor(x)), density);  // Use density parameter
+    highp float tall = (1.0 - (abs(fr.x - 0.5) + fr.y * 0.5)) * random;
+    
+    return clamp(clamp((shape - random) * step(randS(floor(x + vec2(0, 0.05))), density), 0.0, 1.0) + tall, 0.0, 1.0);
+}
+
 // shooting star
 vec3 nlRenderShootingStar(vec3 viewDir, vec3 FOG_COLOR, float t) {
   // transition vars
@@ -268,13 +365,13 @@ vec3 nlRenderShootingStar(vec3 viewDir, vec3 FOG_COLOR, float t) {
   return s * color; // Now uses randomized colors
 }
 
-// Galaxy stars - needs further optimization
+// End Galaxy stars - needs further optimization
 vec3 nlRenderGalaxy(vec3 vdir, vec3 fogColor, nl_environment env, float t) {
   if (env.underwater) {
     return vec3_splat(0.0);
   }
 
-  t *= NL_GALAXY_SPEED;
+  t *= NL_END_GALAXY_SPEED;
 
   // rotate space
   float cosb = sin(0.2*t);
@@ -303,9 +400,9 @@ vec3 nlRenderGalaxy(vec3 vdir, vec3 fogColor, nl_environment env, float t) {
   gf *= 1.0-0.2*smoothstep(0.3, 0.4, gfmask);
   gf *= 1.0-0.1*smoothstep(0.2, 0.1, gfmask);
   vec3 gfcol = normalize(vec3(n0, cos(2.0*vdir.y), sin(vdir.x+n0)));
-  stars += (0.4*gf + 0.012)*mix(vec3(0.5, 0.5, 0.5), gfcol*gfcol, NL_GALAXY_VIBRANCE);
+  stars += (0.4*gf + 0.012)*mix(vec3(0.5, 0.5, 0.5), gfcol*gfcol, NL_END_GALAXY_VIBRANCE);
 
-  stars *= mix(1.0, NL_GALAXY_DAY_VISIBILITY, min(dot(fogColor, vec3(0.5,0.7,0.5)), 1.0)); // maybe add day factor to env for global use?
+  stars *= mix(1.0, NL_END_GALAXY_DAY_VISIBILITY, min(dot(fogColor, vec3(0.5,0.7,0.5)), 1.0)); // maybe add day factor to env for global use?
 
   return stars*(1.0-env.rainFactor);
 }
@@ -385,7 +482,7 @@ float triNoise2d(in vec2 p, float spd,float time)
     }
     return clamp(1./pow(rz*29., 1.3),0.,.55);
 }
-vec4 rdAurora(vec3 ro, vec3 rd, float time, vec3 FOG_COLOR, float rain) {
+vec4 rdAurora(vec3 ro, vec3 rd, nl_environment env, float time, vec3 FOG_COLOR, float rain) {
     vec4 col = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 avgCol = vec4(0.0, 0.0, 0.0, 0.0);
 
@@ -418,8 +515,13 @@ vec4 rdAurora(vec3 ro, vec3 rd, float time, vec3 FOG_COLOR, float rain) {
         float rzt = triNoise2d(p, 0.2, time);
 
         float colorFactor = sin(float(i) * 0.15 + time * 0.2) * 0.5 + 0.5;
-        vec3 auroraColor = mix(vec3(0.1, 1.0, 0.9), vec3(0.6, 0.2, 1.0), colorFactor);
+        vec3 auroraColor = vec3(0.0, 0.0, 0.0);
 
+        if(!env.end && !env.nether){
+          auroraColor = mix(vec3(0.102, 0.565, 1.000) /* vec3(0.6, 0.2, 1.0) */ ,vec3(0.102, 0.565, 1.000), colorFactor);
+        } else {
+          auroraColor = mix(vec3(0.447, 0.035, 0.718), vec3(0.447, 0.035, 0.718), colorFactor); 
+        }
         vec4 col2 = vec4(auroraColor * rzt, rzt);
         avgCol = mix(avgCol, col2, 0.4);
         col += avgCol * exp2(-stepRatio * 2.4 - 2.0);
@@ -430,6 +532,8 @@ vec4 rdAurora(vec3 ro, vec3 rd, float time, vec3 FOG_COLOR, float rain) {
     float mask = (1.0 - 0.5 * rain) * max(1.0 - 2.0 * max(FOG_COLOR.b, FOG_COLOR.g), 0.0);
     return saturate(col * 1.8 * mask);
 }
+
+
 
 
 #endif

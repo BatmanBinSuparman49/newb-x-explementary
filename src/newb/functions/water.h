@@ -28,7 +28,7 @@ vec4 nlWater(
     } else { // slanted plane and highly slanted plane
     }*/
   } else { // reflection for side plane
-    bump *= 0.5 + 0.5*sin(3.0*t*NL_WATER_WAVE_SPEED + cPos.y*NL_CONST_PI_HALF);
+    bump *= 0.5 + 0.5*sin(3.0*t*NL_WATER_WAVE_SPEED + cPos.y*PI_HALF);
     nrm.xz = normalize(viewDir.xz) + bump.y*(1.0-viewDir.xz*viewDir.xz)*NL_WATER_BUMP;
     nrm.y = bump.x*NL_WATER_BUMP;
   }
@@ -38,7 +38,8 @@ vec4 nlWater(
   viewDir = viewDir - 2.0*cosR*nrm ; // reflect(viewDir, nrm)
 
   vec3 waterRefl = getSkyRefl(skycol, env, viewDir, FOG_COLOR, t);
-
+  
+  
   #if defined(NL_WATER_CLOUD_REFLECTION)
     if (viewDir.y < 0.0) {
       vec2 cloudPos = (120.0-wPos.y)*viewDir.xz/viewDir.y;

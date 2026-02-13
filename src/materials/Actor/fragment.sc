@@ -35,6 +35,8 @@ void main() {
     }
   #endif
 
+  // vec3 glow = nlGlow();
+
   #ifdef CHANGE_COLOR_MULTI
     albedo = applyMultiColorChange(albedo, ChangeColor.rgb, MultiplicativeTintColor.rgb);
   #elif defined(CHANGE_COLOR)
@@ -51,6 +53,7 @@ void main() {
   albedo = applyOverlayColor(albedo, OverlayColor);
 
   albedo *= albedo;
+
 
   vec4 light = v_light;
   #if defined(EMISSIVE) || defined(EMISSIVE_ONLY)

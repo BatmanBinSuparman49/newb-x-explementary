@@ -1,139 +1,161 @@
-#ifndef CUSTOM_H
-#define CUSTOM_H
-#include "noise.h"
+#define PI 3.141592
 
-/* Define */
-#define pi radians(180.0)
-#define hpi (pi / 2.0)
-#define tau (pi * 2.0)
-#define phi (0.5*sqrt(5.0) + 0.5)
-#define rlog2 (1.0 / log(2.0))
-#define batre 0.96
-#define charge 9.2
+#include "sky.h"
+#include "newb/config.h"
+#include "galaxy.h"
+#include "PBR.h"
 
-//rain drop effect starts
-/* // Screen Effects
-float stickyRaindrop(vec2 uv, vec2 center, float baseSize, float stretch) {
-    vec2 p = (uv - center);
-    p.y /= baseSize * stretch;
-    p.x /= baseSize;
-
-    float d = length(p * vec2(1.0, 0.6));  // horizontal squash
-    float y = p.y;
-
-    float shape = smoothstep(0.5, 0.45, d) *
-                  smoothstep(0.0, 1.0, y + 0.5) *
-                  smoothstep(1.0, -0.3, y);
-
-    return shape;
+float booltofloat(bool factor){
+return float(factor);
+}
+float fogtime(vec4 fogcol) {
+    //三次多项式拟合，四次多项式拟合曲线存在明显突出故不使用
+    // return fogcol.g > 0.213101 ? 1.0 : (((349.305545 * fogcol.g - 159.858192) * fogcol.g + 30.557216) * fogcol.g - 1.628452);
+    return clamp(((349.305545 * fogcol.g - 159.858192) * fogcol.g + 30.557216) * fogcol.g - 1.628452, -1.0, 1.0);
+}
+mat2 rotMat(float a){
+ return mat2(cos(a), sin(a), -sin(a), cos(a));
+}
+float randW(vec2 co)
+{
+ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec3 RainDrop(vec4 diffuse, float time, vec2 uv) {
-    vec3 baseColor = diffuse.rgb;
-    vec3 kol = baseColor;
-    const int drops = DROP_NUMBER;
+float noise(vec2 p)
+{
+    vec2 ip = floor(p);
+    vec2 fp = fract(p);
+    fp = fp * fp * (3.0 - 2.0 * fp);
 
-    for (int i = 0; i < drops; i++) {
-        float fi = float(i);
-        vec2 dropPos = vec2(
-            fract(sin(fi * 12.9898) * 43758.5453),
-            fract(sin(fi * 78.233) * 12345.678 + time * 0.1)
-        );
-        dropPos.y = mod(dropPos.y - time * 0.12, 1.0);
+    float res = mix(
+    mix(randW(ip),randW(ip+vec2(1.0,0.0)),fp.x),
+    mix(randW(ip+vec2(0.0,1.0)),randW(ip+vec2(1.0,1.0)),fp.x),fp.y);
 
-        float baseSize = 0.05 + 0.02 * fract(sin(fi * 5.21) * 1000.0);
-        float stretch = mix(1.0, 2.5, smoothstep(0.1, 0.9, dropPos.y));
-        float dropMask = stickyRaindrop(uv, dropPos, baseSize, stretch);
-        vec3 dropColor = vec3(0.4, 0.6, 0.9);
-        kol = mix(kol, dropColor, dropMask * 0.6);
+    return res;
+}
+highp float getWave(highp vec2 uv, float time){
+    float t = -time*1.0;
+
+    float tiles = 16.0;
+
+    // uv *= tiles;
+    uv *= 2.1;
+    //uv *= rotMat(80.0);
+
+    float A = sin(noise(t+mod(uv,tiles)-sin(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
+    float B = cos(noise(-t+mod(uv,tiles)+cos(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
+    //float A = sin(voronoi2D(t+uv-sin(uv.y*0.2)+uv.x),time,16.0)) * 0.5;
+    return saturate(A + B);
+}
+
+float DistributionGGX(float NoH, float rough){
+    float denom = (NoH * rough - NoH) * NoH + 1.0;
+    return rough / (PI * pow(denom, 2.0));
+}
+
+float getWaterHeight(vec2 uv, float time) {
+    return 0.05*getWave(uv,time); // your wave function or brightness of your texture (tex.r + tex.g + tex.b)/3.0
+}
+vec4 getWaterNormalMapFromHeight(vec2 uv, vec2 resolution, float scale, float time) {
+  vec2 step = 1.0 / resolution;
+
+  float height = getWaterHeight(uv,time);
+
+  vec2 dxy = height - vec2(
+      getWaterHeight(uv + vec2(step.x, 0.0), time),
+      getWaterHeight(uv + vec2(0.0, step.y), time)
+  );
+  return vec4(normalize(vec3(dxy * scale / step, 1.0)), height);
+}
+
+vec4 timedetection(vec4 FogColor,vec4 FogAndDistanceControl){
+  float day1 = pow(max(min(1.0 - FogColor.r * 1.2, 1.0), 0.0), 0.4);
+  float night1 = pow(max(min(1.0 - FogColor.r * 1.5, 1.0), 0.0), 1.2);
+  float dusk1 = max(FogColor.r - FogColor.b, 0.0);
+  float rain1 = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
+  
+  return vec4(day1 ,night1 ,dusk1 ,rain1);
+}
+
+vec4 applyWaterEffect(
+    vec3 v_pos, vec3 v_wpos, vec3 viewDir, vec3 V, vec3 L, vec3 texcol,
+    vec4 diffuse, vec4 reflectionColor, 
+    nl_skycolor skycol, nl_environment  env, vec3 FogColor,
+    float time, float night, float dusk, float dawn, float rain, float nolight,
+    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir
+) {
+    if (!water) return diffuse;
+
+    float endDist = FogAndDistanceControl*0.8;
+    bool doEffect = (camDist < endDist);
+
+    vec3 normal = getWaterNormalMapFromHeight(v_pos.xz, vec2(12.0, 12.0), 0.5, 0.5 * time).xzy;
+    viewDir = reflect(viewDir, normal);
+
+    float glossstrength = 0.5;
+
+    vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
+    vec3 specular = brdf(L, V, 0.22, normal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
+
+    vec3 cloudPos = v_wpos;
+    cloudPos.xz = 3.0 * viewDir.xz / max(viewDir.y, 0.05);
+
+    
+    vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, viewDir, env, time, vec3(0.0,0.0,0.0), 0.0);
+    vec4 clouds = renderClouds(cloudPos.xz, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,
+                               NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
+
+    vec3 sun = getSun(sunDir, viewDir, night, dusk, dawn);
+    sun *= (1.0-night);
+    vec3 moon = getMoon(mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)), viewDir, night);
+
+    vec3 stars = vec3(0.0, 0.0, 0.0);
+
+    #ifdef FALLING_STARS
+    if(!env.underwater) {
+        vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
+        float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, time);
+        float starFactor = smoothstep(0.5, 1.0, night)*(1.0-rain);
+        stars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
+        stars *= starFactor;
     }
-    return kol;
-} */
+    #endif
 
-// Color/Lighting Calculations
-float lumaGrayscale(vec3 d) {
-    return dot(d, vec3(0.299, 0.587, 0.114));
-}
+    #ifdef NL_GALAXY_STARS
+        vec3 GalaxyStars = nlGalaxy(viewDir, FogColor, env, time);
+        stars += NL_GALAXY_STARS * GalaxyStars;
+    #endif
 
+    float NdotV = dot(normal, V);
+    float fresnel = calculateFresnel(NdotV, 1.2);
+    float blend = mix(0.04, 1.0, fresnel);
 
-float ggx(vec3 N, vec3 V, vec3 L, float roughness, float F0) {
-    vec3 H = normalize(V + L);
-    float NdotL = max(dot(N, L), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotH = max(dot(N, H), 0.0);
-    float VdotH = max(dot(V, H), 0.0);
-
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float denom = (NdotH * NdotH * (a2 - 1.0) + 1.0);
-    float D = a2 / (3.141592 * denom * denom);
-
-    float k = (roughness + 1.0);
-    k = (k * k) / 8.0;
-    float G_V = NdotV / (NdotV * (1.0 - k) + k);
-    float G_L = NdotL / (NdotL * (1.0 - k) + k);
-    float G = G_V * G_L;
-
-    float F = F0 + (1.0 - F0) * pow(1.0 - VdotH, 5.0);
-    return (D * G * F) / max(4.0 * NdotL * NdotV, 0.001);
-}
-
-// World Calculation
-vec3 getNormal(sampler2D TEXTURE_0, vec2 uv) {
-    vec3 base0 = texture2D(TEXTURE_0, uv).rgb;
-    highp float base = lumaGrayscale(base0);
-    highp float w1 = base - lumaGrayscale(texture2D(TEXTURE_0, vec2(uv.x-0.00018, uv.y)).rgb)
-    highp float w2 = (base - lumaGrayscale(texture2D(TEXTURE_0, vec2(uv.x, uv.y-0.00018)).rgb));
-    return normalize(vec3(w1, w2, 1.0)) * 0.5 + 0.5;
-}
-
-mat3 getTBN(vec3 normal) {
-    vec3 T = vec3(abs(normal.y) + normal.z, 0.0, normal.x);
-    vec3 B = vec3(0.0, -abs(normal).x - abs(normal).z, abs(normal).y);
-    return transpose(mat3(T, B, normal));
-}
-
-// PBR Functions
-float DistributionGGX(vec3 n, vec3 h, float roughness) {
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(n, h), 0.0);
-    float denom = (NdotH * NdotH * (a2 - 1.0) + 1.0);
-    return a2 / (3.141592 * denom * denom);
-}
-
-float GeometrySchlickGGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-    return NdotV / (NdotV * (1.0 - k) + k);
-}
+    vec3 skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, time);
+    diffuse.rgb = mix(diffuse.rgb, skyReflection, 1.0);
 
 
-
-/* Metal Blocks Reflection 
-   or fake pbr and ray tracing in other 
-   words 
-   -- Real Deal */
-/* #if !defined(TRANSPARENT) && !defined(ALPHA_TEST)
-float metallic = metal ? 1.0 : 0.0;
-if(metal && !tree){
-    vec3 sky = nlRenderSky(skycol, env, -reflectNormal, FogColor.rgb, v_underwaterRainTime.z,L);
-     vec4 clouds = renderClouds(reflectNormal.xz, 0.1*ViewPositionAndTime.w, v_underwaterRainTime.y, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
-    vec3 refl = sky;
+    reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, blend);
+    vec3 reflections = mix(diffuse.rgb, clouds.rgb * .4, 0.688 * clouds.a * (1.0 - nolight));
     
-    vec3 baseColor = texcol.rgb;
-  vec3 dielectricF0 = vec3(0.4,0.4,0.4); // typical for non-metals
-  vec3 f0 = mix(diffuse.rgb,dielectricF0, metallic);
-    refl = refl * clouds.a*9.0 + clouds.rgb;
-    refl = mix(diffuse.rgb, refl, f0);
-    
-    float fresnel = pow(1.0 - dot(V, worldNormal), 0.4);
-    refl = (refl * (dirlight(dir,rain,night) + nDotL));
-    refl = refl  * fresnel + specular * sunLight ;
- diffuse.rgb = refl;
- 
- }
- #endif*/
+    reflections += stars;
 
-    
-#endif
+    float luma = dot(reflectionColor.rgb, vec3(0.299, 0.587, 0.114));
+    float brightness = pow(clamp(luma * 1.8, 0.0, 1.0), mix(1.0, 2.5, 1.0 - FogColor.b));
+
+    bool flatWater = v_wpos.y < 0.0;
+
+    if (!env.end && flatWater) {
+        diffuse.rgb = reflections * fresnel;
+        diffuse.a = mix(diffuse.a * 0.75, 1.0, pow(1.0 - NdotV, 2.0));
+        if(doEffect){
+            #ifdef LYNX_AURORA
+                    diffuse.rgb += aurora.rgb * aurora.a * smoothstep(0.5, 1.0, night) * (1.0-rain);
+            #endif
+        }
+    }
+    if(!env.end && !env.nether){
+        diffuse.rgb += sun;
+        diffuse.rgb += moon;
+    }
+    return diffuse;
+}

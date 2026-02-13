@@ -12,6 +12,9 @@ venv
 copy.sh
 *.bin
 *.py[cod]
+*.zip
+.DS_store
+Thumbs.db
 
 # eol
 * text=lf

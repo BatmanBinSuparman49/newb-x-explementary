@@ -60,7 +60,7 @@ Removes shooting stars
 
 [[subpack]]
 define = "ROUNDED_CLOUDS"
-materials = ["Clouds"]
+materials = ["Clouds", "RenderChunk"]
 description = '''
 Rounded Complementary style clouds
 '''

@@ -102,6 +102,7 @@ void main() {
 
   vec3 realPos = v_wpos.xyz + CameraPosition.xyz;
   float camDist = v_wpos.w;
+  vec3 viewDir = normalize(v_wpos.xyz);
 
   
   float endDist = FogAndDistanceControl.z*0.9;
@@ -131,7 +132,7 @@ void main() {
   float a = radians(45.0);
   vec3 sunVector = normalize(vec3(cos(a), sin(a), 0.2));
   vec3 L = sunVector;
-  vec3 V = normalize(-v_wpos.xyz);
+  vec3 V = normalize(-viewDir);
   vec3 N = normalize(cross(dFdx(v_position), dFdy(v_position)));
   vec3 sunDir = normalize(SunDirection.xyz);
   vec3 moonDir = mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk));
@@ -216,8 +217,6 @@ void main() {
 
   diffuse.rgb *= color.rgb;
   diffuse.rgb += glow;
-
-  vec3 viewDir = normalize(v_wpos.xyz);
 
   bool blockUnderWater = (v_lightmapUV.y < 0.9 && abs((2.0 * v_position.y - 15.0) / 16.0 - v_lightmapUV.y) < 0.00002);
   float causticDist = FogAndDistanceControl.z*0.5;

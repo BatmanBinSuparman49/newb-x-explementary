@@ -39,7 +39,7 @@ void main() {
   #endif
 
   #ifdef RENDER_AS_BILLBOARDS
-    worldPos += vec3(0.5,0.5,0.5);
+    worldPos += vec3(0.5, 0.5, 0.5);
 
     vec3 modelCamPos = ViewPositionAndTime.xyz - worldPos;
     float camDis = length(modelCamPos);

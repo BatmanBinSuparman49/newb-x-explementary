@@ -37,6 +37,7 @@ float noise(vec2 p)
 
     return res;
 }
+
 highp float getWave(highp vec2 uv, float time){
     float t = -time*1.0;
 
@@ -94,21 +95,20 @@ vec4 applyWaterEffect(
     bool doEffect = (camDist < endDist);
 
     vec3 normal = getWaterNormalMapFromHeight(v_pos.xz, vec2(12.0, 12.0), 0.5, 0.5 * time).xzy;
-    viewDir = reflect(viewDir, normal);
+    vec3 reflDir = reflect(viewDir, normal);
 
     float glossstrength = 0.5;
 
     vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
     vec3 specular = brdf(L, V, 0.22, normal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
 
-    vec3 cloudPos = v_wpos;
-    vec3 roundPos = v_wpos;
-    roundPos.xz   = 24.0 * viewDir.xz/max(viewDir.y, 0.05);
-    cloudPos.xz = 3.0 * viewDir.xz / max(viewDir.y, 0.05);
-
+    vec2 cloudPos = 3.0 * reflDir.xz / max(reflDir.y, 0.05);
+    vec3 roundPos;
+    roundPos.xz = 48.0 * reflDir.xz/max(reflDir.y, 0.05);
+    roundPos.y = 1.0;
     
     vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, viewDir, env, time, vec3(0.0,0.0,0.0), 0.0);
-    vec4 clouds = renderClouds(cloudPos.xz, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,
+    vec4 clouds = renderClouds(cloudPos, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,
                                NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
 
     vec4 v_color1 = vec4(skycol.zenith, rain);
@@ -158,6 +158,7 @@ vec4 applyWaterEffect(
     float brightness = pow(clamp(luma * 1.8, 0.0, 1.0), mix(1.0, 2.5, 1.0 - FogColor.b));
 
     bool flatWater = v_wpos.y < 0.0;
+    // bool flatWater = water;
 
     if (!env.end && flatWater) {
         diffuse.rgb = reflections * fresnel;

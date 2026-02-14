@@ -2,8 +2,9 @@
 #include "noise.h"
 
 vec3 nlGalaxy(vec3 vdir, vec3 fogColor, nl_environment env, float t) {
+  vec3 stars;
   if (env.underwater) {
-    return vec3_splat(0.0);
+    stars =  vec3_splat(0.0);
   }
 
   t *= NL_GALAXY_SPEED;
@@ -24,7 +25,7 @@ vec3 nlGalaxy(vec3 vdir, vec3 fogColor, nl_environment env, float t) {
   float gd = vdir.x + 0.1*vdir.y + 0.1*sin(10.0*vdir.z + 0.2*t);
   float st = n1*n2*n3*n3*(1.0+70.0*gd*gd);
   st = (1.0-st)/(1.0+400.0*st);
-  vec3 stars = vec3(0.28, 0.50, 1.3) * st;
+  stars = vec3(0.28, 0.50, 1.3) * st;
 
   /*
   // glow

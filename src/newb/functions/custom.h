@@ -4,6 +4,10 @@
 #include "newb/config.h"
 #include "galaxy.h"
 #include "PBR.h"
+#include "clouds.h"
+
+#define NL_CLOUD_PARAMS(x) NL_CLOUD2##x##STEPS, NL_CLOUD2##x##THICKNESS, NL_CLOUD2##x##RAIN_THICKNESS, NL_CLOUD2##x##VELOCITY, NL_CLOUD2##x##SCALE, NL_CLOUD2##x##DENSITY, NL_CLOUD2##x##SHAPE
+
 
 float booltofloat(bool factor){
 return float(factor);
@@ -98,12 +102,18 @@ vec4 applyWaterEffect(
     vec3 specular = brdf(L, V, 0.22, normal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
 
     vec3 cloudPos = v_wpos;
+    vec3 roundPos = v_wpos;
+    roundPos.xz   = 24.0 * viewDir.xz/max(viewDir.y, 0.05);
     cloudPos.xz = 3.0 * viewDir.xz / max(viewDir.y, 0.05);
 
     
     vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, viewDir, env, time, vec3(0.0,0.0,0.0), 0.0);
     vec4 clouds = renderClouds(cloudPos.xz, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,
                                NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
+
+    vec4 v_color1 = vec4(skycol.zenith, rain);
+    vec4 v_color2 = vec4(skycol.horizonEdge, time);
+    vec4 roundedC = renderCloudsRounded(viewDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
     vec3 sun = getSun(sunDir, viewDir, night, dusk, dawn);
     sun *= (1.0-night);
@@ -135,7 +145,12 @@ vec4 applyWaterEffect(
 
 
     reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, blend);
-    vec3 reflections = mix(diffuse.rgb, clouds.rgb * .4, 0.688 * clouds.a * (1.0 - nolight));
+    vec3 reflections;
+    #if NL_CLOUD_TYPE == 2
+        reflections = mix(diffuse.rgb, roundedC.rgb * 0.4, 0.688 * roundedC.a * (1.0 - nolight));
+    #else 
+        reflections = mix(diffuse.rgb, clouds.rgb * 0.4, 0.688 * clouds.a * (1.0 - nolight));
+    #endif
     
     reflections += stars;
 

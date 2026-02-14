@@ -178,13 +178,13 @@ void main() {
 
   float shadow = smoothstep(0.875,0.860, pow(v_lightmapUV.y,2.0));
   shadow = mix(shadow, 0.0, pow(v_lightmapUV.x * 1.2, 6.0)); 
-  float shadowFactor = 1.0 - 0.008 * shadow;
-  shadowFactor = max(shadowFactor, 0.3); 
+  float shadowFactor = 1.0 - 0.15 * shadow;
+  shadowFactor = max(shadowFactor, 0.4); 
   diffuse.rgb *= shadowFactor;
 
   // side block shadows
   float sideshadow = smoothstep(0.64, 0.62, v_color1.g);
-  diffuse.rgb *= 1.0-0.08*sideshadow;                     //increase 0.38 = darker shadow
+  diffuse.rgb *= 1.0-0.2*sideshadow;                     //increase 0.38 = darker shadow
 
   #if defined(SEASONS) && (defined(OPAQUE) || defined(ALPHA_TEST))
     diffuse.rgb *= mix(vec3(1.0,1.0,1.0), texture2D(s_SeasonsTexture, v_color1.xy).rgb * 2.0, v_color1.z);

@@ -115,15 +115,15 @@ vec4 applyWaterEffect(
     vec4 v_color2 = vec4(skycol.horizonEdge, time);
     vec4 roundedC = renderCloudsRounded(viewDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
-    vec3 sun = getSun(sunDir, viewDir, night, dusk, dawn);
+    vec3 sun = getSun(sunDir, reflDir, night, dusk, dawn);
     sun *= (1.0-night);
-    vec3 moon = getMoon(mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)), viewDir, night);
+    vec3 moon = getMoon(mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)), reflDir, night);
 
     vec3 stars = vec3(0.0, 0.0, 0.0);
 
     #ifdef FALLING_STARS
     if(!env.underwater) {
-        vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
+        vec2 starUV = reflDir.xz / (0.5 + reflDir.y);
         float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, time);
         float starFactor = smoothstep(0.5, 1.0, night)*(1.0-rain);
         stars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
@@ -132,7 +132,7 @@ vec4 applyWaterEffect(
     #endif
 
     #ifdef NL_GALAXY_STARS
-        vec3 GalaxyStars = nlGalaxy(viewDir, FogColor, env, time);
+        vec3 GalaxyStars = nlGalaxy(reflDir, FogColor, env, time);
         stars += NL_GALAXY_STARS * GalaxyStars;
     #endif
 
@@ -140,7 +140,7 @@ vec4 applyWaterEffect(
     float fresnel = calculateFresnel(NdotV, 1.2);
     float blend = mix(0.04, 1.0, fresnel);
 
-    vec3 skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, time);
+    vec3 skyReflection = getSkyRefl(skycol, env, reflDir, FogColor.rgb, time);
     diffuse.rgb = mix(diffuse.rgb, skyReflection, 1.0);
 
 

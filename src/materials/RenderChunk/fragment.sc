@@ -234,10 +234,6 @@ void main() {
       diffuse.rgb *= watercol;
     }
   }
-  float glossstrength = 0.5;
-  sunDir *= (1.0-night);
-  vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
-
   // water 
   diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir);
 
@@ -246,11 +242,15 @@ void main() {
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 
   vec3 dayCol  = vec3_splat(1.0);
   float twilight = saturate(dusk + dawn);
-  vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*night; 
+  sunDir *= (1.0-night);
+
+  float glossstrength = 0.5;
+  vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
 
   vec3 specular = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
   float fresnel = pow(1.0 - dot(V, worldNormal), 3.0); 
   viewDir = reflect(viewDir, worldNormal);
+
 
   float ndotl = max(dot(N, normalize(mix(sunDir, moonDir, moonFactor))),0.0);
   float dirlight = ndotl + 0.2;
@@ -270,6 +270,7 @@ void main() {
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
   // specular highlights 
+  vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*night; 
   float specDist = FogAndDistanceControl.z*0.67;
     if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && !blockUnderWater && isLeaf==0.0){
       vec3 specHighlights = brdf_specular(normalize(mix(sunDir, moonDir, moonFactor)), V, worldNormal, 0.65, F0, specularCol);
@@ -298,6 +299,9 @@ void main() {
     //puddleSpec    *= (1.0-shadow);
     //diffuse.rgb += puddleSpec*0.67;
   } */
+
+  float downwards = max(-N.y, 0.0);
+  float notBottom = 1.0 - downwards;
 
   /* vec3 rippleN = norm(realPos.xz, ViewPositionAndTime.w * 1.6);
   float Rupwards = max(N.y, 0.0);
@@ -346,15 +350,16 @@ void main() {
   
   if(doEffect){
     if(reflective && !water){
-      diffuse.rgb += stars * 2.1;
+      diffuse.rgb += stars * 2.1 * notBottom;
     }
   } 
 
   if(reflective && !water){
     reflection  += fstars * 0.7;
     diffuse.rgb *= 1.0 - F0;
-    diffuse.rgb = mix(diffuse.rgb, reflection, diffuse.a * fresnel);
-    diffuse.rgb += specular; 
+    float notDown = diffuse.a * fresnel * notBottom;
+    diffuse.rgb = mix(diffuse.rgb, reflection, notDown);
+    diffuse.rgb += specular * notBottom; 
   }
 
   diffuse.rgb = mix(diffuse.rgb, v_fog.rgb, v_fog.a);

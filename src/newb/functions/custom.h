@@ -82,6 +82,11 @@ vec4 timedetection(vec4 FogColor,vec4 FogAndDistanceControl){
   return vec4(day1 ,night1 ,dusk1 ,rain1);
 }
 
+float getMie(vec3 lPos, vec3 pos){
+    return exp(-distance(pos, lPos) * 2.0) * exp(-saturate(pos.y) * 4.0);
+}
+
+
 vec4 applyWaterEffect(
     vec3 v_pos, vec3 v_wpos, vec3 viewDir, vec3 V, vec3 L, vec3 texcol,
     vec4 diffuse, vec4 reflectionColor, 
@@ -117,6 +122,7 @@ vec4 applyWaterEffect(
 
     vec3 sun = getSun(sunDir, reflDir, night, dusk, dawn);
     sun *= (1.0-night);
+    // sun *= getMie(sunDir, reflDir) * 4.0;
     vec3 moon = getMoon(mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)), reflDir, night);
 
     vec3 stars = vec3(0.0, 0.0, 0.0);

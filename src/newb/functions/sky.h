@@ -77,33 +77,30 @@ vec4 timeofday(float dayTime){
   return vec4(night, dawn, dusk, day);
 }
 
-/*vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn, float isbloom, float hardnessfactor, float glowexp){
-    float sunDot = saturate(dot(sunDir, viewDir));
-    float core =   pow(smoothstep(0.998, 1.0, sunDot), hardnessfactor);
-    float corona = pow(sunDot, 64.0) * max(0.8 - 0.7 * night, 0.0);
-    float outerGlow = pow(sunDot, glowexp) * max(0.3 - 0.2 * night, 0.0);
-    float sun = 0.0;
-    if(isbloom == 1){
-    sun = core + corona + outerGlow;
-    }else{
-      sun = core + corona;
-    }
-    vec3 sunCol   = vec3(1.0, 1.0, 1.0);   
-    vec3 dawnCol  = vec3(0.9686, 0.3098, 0.3647);     
+/* vec3 getSun2(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
+    float sunDot = dot(sunDir, viewDir);
+    float twilight = saturate(dawn + dusk);
+    float intensity = mix(16.0, 6.0, twilight);
+    intensity = mix(intensity, 6.0, night);
+    float core = pow(smoothstep(0.998, 1.0, sunDot), 1.2) * intensity;
+    float corona = pow(saturate(sunDot), 64.0);
+    float outerGlow = pow(saturate(sunDot), 8.0);
+    vec3 sunCol   = vec3(1.0, 0.98, 0.95);
+    vec3 dawnCol  = vec3(1.0, 0.35, 0.05);
+    vec3 finalSunCol = mix(sunCol, dawnCol, twilight);
+    vec3 colorFilter = mix(vec3_splat(1.0), vec3(1.0, 0.4, 0.1), twilight);
 
-    sunCol = mix(sunCol, dawnCol,saturate(dawn+dusk));
-
-    return sunCol * sun;
-}*/
+    return (finalSunCol * colorFilter) * (core + corona + outerGlow);
+} */
 
 vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
-    float sunDot = saturate(dot(sunDir, viewDir));
+    float sunDot = max((dot(sunDir, viewDir)), 0.0);
     float core = pow(smoothstep(0.998, 1.0, sunDot), 0.48);
     float corona = pow(sunDot, 64.0) * max(0.8 - 0.7 * night, 0.0);
     float outerGlow = pow(sunDot, 8.0) * max(0.3 - 0.2 * night, 0.0);
     float sun = core + corona + outerGlow;
     vec3 sunCol   = vec3(1.0, 0.98, 0.95);   
-    vec3 dawnCol  = vec3(1.0, 0.52, 0.278);     
+    vec3 dawnCol  = vec3(1.0, 0.35, 0.05);   
 
     sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
 
@@ -118,7 +115,7 @@ vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
     float moon = core + corona + outerGlow;
     vec3 moonCol = vec3(1.0, 1.0, 1.0);
 
-    return moonCol * moon;
+    return moonCol * (core * 20.0 + corona * 2.0 + outerGlow * 1.5);
 }
 
 // 1D sky with three color gradient
@@ -136,25 +133,6 @@ vec3 renderOverworldSky(nl_skycolor skycol, vec3 viewDir) {
   sky = mix(skycol.zenith, skycol.horizon, gradient2);
 
   return sky;
-}
-
-// sunrise/sunset bloom (60% reduced)
-vec3 getSunBloom(float viewDirX, vec3 horizonEdgeCol, vec3 FOG_COLOR) {
-  float factor = FOG_COLOR.r / (0.01 + length(FOG_COLOR));
-  factor *= factor;
-  factor *= 0.4;  // 60% reduction from original (was effectively factor^4)
-
-  float spread = smoothstep(0.0, 1.0, abs(viewDirX));
-  float sunBloom = spread*spread*spread;
-  sunBloom = 0.5*spread + sunBloom*sunBloom*sunBloom*1.3;
-
-  return NL_MORNING_SUN_COL * horizonEdgeCol * (sunBloom * factor * factor);
-}
-
-vec3 getPuaColor(float angle, float t) {
-    // Oscilación más suave y gradual en el cambio de color de las púas
-    float mixFactor = 0.5 + 0.5 * sin(angle * 8.0 + t * 1.5);
-    return mix(PUA_COLOR_1, PUA_COLOR_2, mixFactor);
 }
 
 //end sky
@@ -227,11 +205,10 @@ vec3 nlRenderSky(nl_skycolor skycol, nl_environment env, vec3 viewDir, vec3 FOG_
         streaks *= streaks;
         streaks = (spread + 3.0*grad*grad + 8.0*streaks*streaks);
         sky += 3.0*streaks*skycol.horizon;
-      } else 
+      } else {
     #endif
-    if (!env.nether) {
-      sky += getSunBloom(viewDir.x, skycol.horizonEdge, FOG_COLOR);
-    }
+      }
+
   }
 
   return sky;

@@ -225,7 +225,7 @@ void main() {
   // Caustics
   if(doCaustics){
     if (env.underwater || blockUnderWater){
-      float upwards = max(N.y,0.0);
+      float upwards = max(N.y, 0.0);
       float caustics = E_UNDW(realPos, v_lightmapUV);
       caustics *= upwards;
       diffuse += caustics;
@@ -243,11 +243,12 @@ void main() {
   vec3 dayCol  = vec3_splat(1.0);
   float twilight = saturate(dusk + dawn);
   sunDir *= (1.0-night);
+  vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*night; 
 
   float glossstrength = 0.5;
   vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
 
-  vec3 specular = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
+  vec3 specular = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
   float fresnel = pow(1.0 - dot(V, worldNormal), 3.0); 
   viewDir = reflect(viewDir, worldNormal);
 
@@ -270,7 +271,6 @@ void main() {
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
   // specular highlights 
-  vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*night; 
   float specDist = FogAndDistanceControl.z*0.67;
     if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && !blockUnderWater && isLeaf==0.0){
       vec3 specHighlights = brdf_specular(normalize(mix(sunDir, moonDir, moonFactor)), V, worldNormal, 0.65, F0, specularCol);

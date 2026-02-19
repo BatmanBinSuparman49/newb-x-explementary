@@ -223,6 +223,10 @@ vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
     return vec4(cloudColor, clouds);
 }
 
+float getMie(vec3 lPos, vec3 pos){
+    return exp(-distance(pos, lPos) * 2.0) * exp(-saturate(pos.y) * 4.0);
+}
+
 void main() {
   #ifndef INSTANCING
     vec3 viewDir = normalize(v_worldPos);

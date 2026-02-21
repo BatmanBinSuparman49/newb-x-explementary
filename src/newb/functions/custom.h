@@ -112,13 +112,13 @@ vec4 applyWaterEffect(
     roundPos.xz = 48.0 * reflDir.xz/max(reflDir.y, 0.05);
     roundPos.y = 1.0;
     
-    vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, viewDir, env, time, vec3(0.0,0.0,0.0), 0.0);
+    vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, reflDir, env, time, vec3(0.0,0.0,0.0), 0.0);
     vec4 clouds = renderClouds(cloudPos, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,
                                NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
 
     vec4 v_color1 = vec4(skycol.zenith, rain);
     vec4 v_color2 = vec4(skycol.horizonEdge, time);
-    vec4 roundedC = renderCloudsRounded(viewDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
+    vec4 roundedC = renderCloudsRounded(reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
     vec3 sun = getSun(sunDir, reflDir, night, dusk, dawn);
     sun *= (1.0-night);

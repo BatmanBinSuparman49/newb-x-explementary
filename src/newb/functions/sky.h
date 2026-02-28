@@ -77,22 +77,6 @@ vec4 timeofday(float dayTime){
   return vec4(night, dawn, dusk, day);
 }
 
-/* vec3 getSun2(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
-    float sunDot = dot(sunDir, viewDir);
-    float twilight = saturate(dawn + dusk);
-    float intensity = mix(16.0, 6.0, twilight);
-    intensity = mix(intensity, 6.0, night);
-    float core = pow(smoothstep(0.998, 1.0, sunDot), 1.2) * intensity;
-    float corona = pow(saturate(sunDot), 64.0);
-    float outerGlow = pow(saturate(sunDot), 8.0);
-    vec3 sunCol   = vec3(1.0, 0.98, 0.95);
-    vec3 dawnCol  = vec3(1.0, 0.35, 0.05);
-    vec3 finalSunCol = mix(sunCol, dawnCol, twilight);
-    vec3 colorFilter = mix(vec3_splat(1.0), vec3(1.0, 0.4, 0.1), twilight);
-
-    return (finalSunCol * colorFilter) * (core + corona + outerGlow);
-} */
-
 vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
     float sunDot = max((dot(sunDir, viewDir)), 0.0);
     float core = pow(smoothstep(0.998, 1.0, sunDot), 0.48);
@@ -105,6 +89,14 @@ vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
     sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
 
     return sunCol * sun;
+}
+
+vec3 sunS(vec3 sunDir, vec3 viewDir){
+  float sunDot = max(0.0, 1.0 - dot(sunDir, viewDir));
+  float m = 0.01 / (0.0001 + sunDot);
+  m = pow(m, 1.5) * 0.1;
+  vec3 sunCol = vec3(1.0, 0.98, 0.95);
+  return sunCol * m;
 }
 
 vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
@@ -221,11 +213,10 @@ vec4 renderBlackhole(vec3 vdir, float t) {
   float r = 2.4;
   r += 0.1*t;
   vec3 vr = vdir;
-  /* mat2 rotMat = float2x2(cos(r), -sin(r), sin(r), cos(r)); // Construct matrix
-  vr.xy = mul(rotMat, vr.xy); // Correct matrix-vector multiplication
+  mat2 rotMat = mat2(cos(r), -sin(r), sin(r), cos(r)); // Construct matrix
+  vr.xy = mul(rotMat, vr.xy);
   r *= 2.0;
   vr.yz = mul(rotMat, vr.yz);
-  */
 
   vr.xy = mul(vr.xy, mtxFromRows(vec2(cos(r), -sin(r)), vec2(sin(r), cos(r))));
   r*= 2.0;
@@ -305,7 +296,6 @@ vec3 nlRenderShootingStar(vec3 viewDir, vec3 FOG_COLOR, float t) {
   float a = 6.2831*r;
   float cosa = cos(a);
   float sina = sin(a);
-  // Increased size range (original: 7.0 + 5.0*r)
   vec2 uv = viewDir.xz * (15.0 + 10.0*r); // Larger stars
   uv = vec2(cosa*uv.x + sina*uv.y, -sina*uv.x + cosa*uv.y);
   uv.x += t1 - t;
@@ -314,19 +304,17 @@ vec3 nlRenderShootingStar(vec3 viewDir, vec3 FOG_COLOR, float t) {
   uv *= STAR_SCALE;
 
   // draw star
-  // Adjusted glow width for new size (original: 15.0)
-  float g = 1.0 - min(abs((uv.x - 0.95) * 8.0), 1.0); // Wider glow
-  // Slightly thicker streak (original: 4.0)
+  float g = 1.0 - min(abs((uv.x - 0.95) * 8.0), 1.0); 
+
   float s = 1.0 - min(abs(2.5 * uv.y), 1.0); // Thicker trail
   s *= s*s*smoothstep(-1.0+1.96*t1, 0.98-t, uv.x); // decay tail
   s *= s*s*smoothstep(1.0, 0.98-t0, uv.x); // decay source
   s *= 1.0-t1; // fade in
   s *= 1.0-t0; // fade out
-  // Increased brightness (original: 0.9 + 20.0*g*g)
-  s *= 1.3 + 30.0 * g * g; // Brighter stars
-  s *= max(1.0-FOG_COLOR.r-FOG_COLOR.g-FOG_COLOR.b, 0.0); // fade out during day
 
-  // ADDED COLOR RANDOMIZATION - PRESERVES DEFAULT AS FALLBACK
+  s *= 1.3 + 30.0 * g * g; // Brighter stars
+  s *= max(1.0-FOG_COLOR.r-FOG_COLOR.g-FOG_COLOR.b, 0.0);
+
   vec3 color;
   float colorSeed = fract(r * 137.0);
   if (colorSeed < 0.17) color = vec3(0.83, 0.95, 1.0);      // Icy Blue

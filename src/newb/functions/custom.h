@@ -43,13 +43,11 @@ highp float getWave(highp vec2 uv, float time){
 
     float tiles = 16.0;
 
-    // uv *= tiles;
-    uv *= 2.1;
-    //uv *= rotMat(80.0);
+    uv *= 1.5;
+    uv = mul(uv, rotMat(80.0));
 
     float A = sin(noise(t+mod(uv,tiles)-sin(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
     float B = cos(noise(-t+mod(uv,tiles)+cos(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
-    //float A = sin(voronoi2D(t+uv-sin(uv.y*0.2)+uv.x),time,16.0)) * 0.5;
     return saturate(A + B);
 }
 
@@ -58,9 +56,34 @@ float DistributionGGX(float NoH, float rough){
     return rough / (PI * pow(denom, 2.0));
 }
 
-float getWaterHeight(vec2 uv, float time) {
-    return 0.05*getWave(uv,time); // your wave function or brightness of your texture (tex.r + tex.g + tex.b)/3.0
+// Another water wave function from code cave 
+float ranD( vec2 p){
+ return fract(cos(p.x +p.y * 13.0) * 335.552);
 }
+
+float snoise(  vec2 p) {
+   vec2 i = floor(p);
+   vec2 f = fract(p);
+   vec2 u = pow(f,vec2(2.0, 2.0))*(2. - 1.*f);
+
+   return mix(mix(ranD(i+vec2(0.,0.)), ranD(i+vec2(1.,0.)), u.x), mix(ranD(i+vec2(0.,1.)), ranD(i+vec2(1.,1.)), u.x), u.y);
+}
+
+float Wave(vec2 p, float t){
+  vec2 p1 = p + vec2(-t*0.9,t*0.2)*0.5;
+  p = p - vec2(-t*0.9,t*0.2)*0.1;
+  float w1 = snoise(vec2(p1.x*6.0,p1.y*1.5));
+  float w2 = sin(snoise(vec2(p.x*3.0+p.y,p.y)));
+  return clamp(1.5-(w1*(1.0-w2)+0.5),0.0,1.0);
+}
+
+// code cave water wave function ends 
+
+float getWaterHeight(vec2 uv, float time) {
+    return 0.03*getWave(uv,time); // your wave function or brightness of your texture (tex.r + tex.g + tex.b)/3.0
+    // return 0.05*Wave(uv, time);
+}
+
 vec4 getWaterNormalMapFromHeight(vec2 uv, vec2 resolution, float scale, float time) {
   vec2 step = 1.0 / resolution;
 
@@ -70,7 +93,20 @@ vec4 getWaterNormalMapFromHeight(vec2 uv, vec2 resolution, float scale, float ti
       getWaterHeight(uv + vec2(step.x, 0.0), time),
       getWaterHeight(uv + vec2(0.0, step.y), time)
   );
-  return vec4(normalize(vec3(dxy * scale / step, 1.0)), height);
+  return vec4(normalize(vec3(dxy * scale / step, 1.0)), height); 
+}
+
+// another normal map function from code cave
+vec3 getWaterNormal(vec2 uv, float t) {
+    float eps = 0.005;
+    float h  = getWaterHeight(uv, t);
+    float hx = getWaterHeight(uv + vec2(eps, 0.0), t);
+    float hy = getWaterHeight(uv + vec2(0.0, eps), t);
+
+    float dx = (hx - h) / eps;
+    float dy = (hy - h) / eps;
+
+    return normalize(vec3(-dx, -dy, 1.0));
 }
 
 vec4 timedetection(vec4 FogColor,vec4 FogAndDistanceControl){
@@ -81,11 +117,6 @@ vec4 timedetection(vec4 FogColor,vec4 FogAndDistanceControl){
   
   return vec4(day1 ,night1 ,dusk1 ,rain1);
 }
-
-float getMie(vec3 lPos, vec3 pos){
-    return exp(-distance(pos, lPos) * 2.0) * exp(-saturate(pos.y) * 4.0);
-}
-
 
 vec4 applyWaterEffect(
     vec3 v_pos, vec3 v_wpos, vec3 viewDir, vec3 V, vec3 L, vec3 texcol,
@@ -99,7 +130,8 @@ vec4 applyWaterEffect(
     float endDist = FogAndDistanceControl*0.8;
     bool doEffect = (camDist < endDist);
 
-    vec3 normal = getWaterNormalMapFromHeight(v_pos.xz, vec2(12.0, 12.0), 0.5, 0.5 * time).xzy;
+    // vec3 normal = getWaterNormalMapFromHeight(v_pos.xz, vec2(16.0, 16.0), 0.5, time).xzy;
+    vec3 normal = getWaterNormal(v_pos.xz, time).xzy;
     vec3 reflDir = reflect(viewDir, normal);
 
     float glossstrength = 0.5;

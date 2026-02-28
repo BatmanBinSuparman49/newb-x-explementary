@@ -45,10 +45,8 @@ vec3 StarLayer(vec2 uv, float time) {
 }
 
 vec3 renderStarfield(vec3 viewDir, float time) {
-    // Use the simple, reliable projection
     vec2 uv = starfieldProjection(viewDir);
     
-    // Optional: Very subtle rotation (remove if unwanted)
     float rotation = time * 0.01;
     float cosRot = cos(rotation);
     float sinRot = sin(rotation);

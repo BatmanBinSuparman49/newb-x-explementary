@@ -141,12 +141,13 @@ void main() {
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
   vec3 reflectNormal = reflect(V, worldNormal);
 
+  bool water = v_extra.b > 0.9;
+
     bool reflective = false,
        leaf = false,
        grass =  false,
        transparent = false,
-       soultorch = false,// not used
-       water = v_extra.b > 0.9,
+       soultorch = false,
        slightly = false;
 
     const vec3 Ambient = vec3(0.02, 0.04, 0.08);
@@ -169,13 +170,6 @@ void main() {
     } else {
      skycol = nlOverworldSkyColors(env.rainFactor,FogColor.rgb);
     }
- 
-  #ifdef ALPHA_TEST
-    if (diffuse.a < 0.6) {
-      discard;
-    }
-  #endif
-
 
   float shadow = smoothstep(0.875,0.860, pow(v_lightmapUV.y,2.0));
   shadow = mix(shadow, 0.0, pow(v_lightmapUV.x * 1.2, 6.0)); 
@@ -201,14 +195,14 @@ void main() {
   color.rgb *= lightTint;
 
 
-  #if defined(TRANSPARENT) && !(defined(SEASONS) || defined(RENDER_AS_BILLBOARDS))
+  /* #if defined(TRANSPARENT) && !(defined(SEASONS) || defined(RENDER_AS_BILLBOARDS))
     if (v_extra.b > 0.9) {
       diffuse.rgb = vec3_splat(1.0 - NL_WATER_TEX_OPACITY*(1.0 - diffuse.b*1.8));
       diffuse.a = color.a;
     }
   #else
     diffuse.a = 1.0;
-  #endif
+  #endif */
 
   float isLeaf = 0.0;
   #if defined(SEASONS) && (defined(ALPHA_TEST) || defined(OPAQUE))
@@ -237,6 +231,24 @@ void main() {
   // water 
   diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir);
 
+  // water absorption
+  float depth = 1.0 - pow(v_lightmapUV.y,2.0);
+  vec3 absorption;
+  bool fromSurface = v_lightmapUV.y < 0.9 ;
+
+  vec3 absorptionCoeff = vec3(2.5, 1.8, 1.2); // Red, Green, Blue
+  absorption = exp(-depth * absorptionCoeff);
+   
+  if(water){
+    diffuse.rgb *= absorption;
+  }
+
+  if(water){
+    float fogDensity = depth * 0.5;
+    float visibility = exp(-fogDensity);
+    diffuse.a *= 0.4 + (visibility * 0.5);
+  }
+
   float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
   vec3 dawnCol = vec3(1.0, 0.52, 0.278);
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 
@@ -251,14 +263,6 @@ void main() {
   vec3 specular = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
   float fresnel = pow(1.0 - dot(V, worldNormal), 3.0); 
   viewDir = reflect(viewDir, worldNormal);
-
-
-  float ndotl = max(dot(N, normalize(mix(sunDir, moonDir, moonFactor))),0.0);
-  float dirlight = ndotl + 0.2;
-
-  /* if(v_extra.b < 0.9){
-    diffuse.rgb *= dirlight;
-  } */
   
   vec3 cloudPos = v_wpos.xyz;
   cloudPos.xz = 3.0 * viewDir.xz / viewDir.y;
@@ -365,6 +369,12 @@ void main() {
   diffuse.rgb = mix(diffuse.rgb, v_fog.rgb, v_fog.a);
 
   diffuse.rgb = colorCorrection(diffuse.rgb);
+
+  #ifdef ALPHA_TEST
+    if (diffuse.a < 0.5) {
+      discard;
+    }
+  #endif
 
   gl_FragColor = diffuse;
 }

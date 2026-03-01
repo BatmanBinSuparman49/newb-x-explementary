@@ -39,7 +39,7 @@ vec3 nlLighting(
   } else if (env.end) {
     torchColor = NL_END_TORCH_COL;
   } else if (env.nether) {
-    torchColor = NL_NETHER_TORCH_COL;
+    torchColor = vec3(1.0,0.52,0.18);
   } else {
     torchColor = mix(NL_OVERWORLD_TORCH_COL, vec3(0.4039, 0.3804, 0.9804), night);
   }

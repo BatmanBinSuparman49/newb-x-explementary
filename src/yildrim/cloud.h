@@ -1,13 +1,9 @@
 #ifndef CLOUD_H
 #define CLOUD_H
 
-// Noise 
-float hash12(vec2 p) {
-    const vec3 K = vec3(0.3183099, 0.3678794, 43758.5453);
-    vec3 x = fract(vec3(p.xyx) * K.x + K.y);
-    x += dot(x, x.yzx + 19.19);
-    return fract((x.x + x.y) * x.z);
-}
+/* Cumulus Clouds by Lynx */
+
+// Noise for Cumulus Clouds
 
 float fastVoronoi3D(vec3 pos, float f) {
     vec3 p1 = fract(pos) - 0.5;
@@ -17,32 +13,6 @@ float fastVoronoi3D(vec3 pos, float f) {
     float d2 = dot(p2, p2);
     
     return 1.0 - f * min(d1, d2);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-
-    float a = hash12(i + vec2(0.0, 0.0));
-    float b = hash12(i + vec2(1.0, 0.0));
-    float c = hash12(i + vec2(0.0, 1.0));
-    float d = hash12(i + vec2(1.0, 1.0));
-
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
-float fbm(vec2 p) {
-    float value = 0.0;
-    float amplitude = 0.5;
-    float frequency = 1.0;
-
-    for (int i = 0; i < 5; i++) {
-        value += amplitude * noise(p * frequency);
-        frequency *= 2.0;
-        amplitude *= 0.5;
-    }
-    return value;
 }
 
 float cloudsNoise3D(vec3 p, float t) {
@@ -89,6 +59,7 @@ float newnoise(vec3 p) {
 #define hpi (pi / 2.0)
 #define tau (pi * 2.0)
 
+// Fractal Brownian Motion for Cumulus Clouds
 float fbmVL(vec3 position, int k) {
     float result = 0.0;
     float density = 0.5;
@@ -100,8 +71,7 @@ float fbmVL(vec3 position, int k) {
     return clamp(result, 0.0, 1.0) + 1.0 / tau / float(k);
 }
 
-// Cumulus Clouds by Lynx
-
+// Config for Cumulus Clouds
 #define CLOUD_MIN_HEIGHT 0.3
 #define CLOUD_MAX_HEIGHT 4.0
 #define CLOUD_THICKNESS (CLOUD_MAX_HEIGHT - CLOUD_MIN_HEIGHT)
@@ -190,7 +160,42 @@ vec4 cumulusCloud(vec3 viewDir, float time, float jitter, vec3 sunColor, vec3 sk
 }
 
 
-// Cirrus clouds by Lynx 
+/* Cirrus clouds by Lynx */ 
+
+float hash12(vec2 p) {
+    const vec3 K = vec3(0.3183099, 0.3678794, 43758.5453);
+    vec3 x = fract(vec3(p.xyx) * K.x + K.y);
+    x += dot(x, x.yzx + 19.19);
+    return fract((x.x + x.y) * x.z);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    float a = hash12(i + vec2(0.0, 0.0));
+    float b = hash12(i + vec2(1.0, 0.0));
+    float c = hash12(i + vec2(0.0, 1.0));
+    float d = hash12(i + vec2(1.0, 1.0));
+
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+    float value = 0.0;
+    float amplitude = .5;
+    float frequency = 1.5;
+
+    for (int i = 0; i < 5; i++) {
+        value += amplitude * noise(p * frequency);
+        frequency *= 2.0;
+        amplitude *= 0.5;
+    }
+    return value;
+}
+
+// --- Cirrus Cloud Logic ---
 
 vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
     vec2 p = uv * vec2(12.0, 3.0);

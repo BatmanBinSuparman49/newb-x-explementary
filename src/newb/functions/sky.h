@@ -93,7 +93,7 @@ vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
 
 vec3 sunS(vec3 sunDir, vec3 viewDir){
   float sunDot = max(0.0, 1.0 - dot(sunDir, viewDir));
-  float m = 0.01 / (0.0001 + sunDot);
+  float m = 0.008 / (0.0001 + sunDot);
   m = pow(m, 1.5) * 0.1;
   vec3 sunCol = vec3(1.0, 0.98, 0.95);
   return sunCol * m;

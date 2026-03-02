@@ -1,6 +1,6 @@
-# Newb X Legacy
+# Newb Explementary Edition
 
-**Newb X Legacy** is a RenderDragon successor to the legacy GLSL shader, [Newb Shader](https://github.com/devendrn/newb-shader-mcbe). It is an enhanced vanilla shader that focuses on being lightweight and having soft aesthetics. It supports Minecraft Bedrock 1.21+ (Windows/Android/iOS).
+**Newb Explementary Edition** is a fantasy RenderDragon shader based on the open-source, [Newb Shader](https://github.com/devendrn/newb-x-mcbe). It is a Newb variant designed to enhance vanilla shader with a fantasy theme. It supports Minecraft Bedrock 1.21+ (Windows/Android/iOS).
 
 <br>
 
@@ -8,7 +8,7 @@
 
 ## Downloads
 
-You can download the shader pack from [release page](https://github.com/devendrn/newb-x-mcbe/releases/latest).
+This shader is available on [CurseForge](https://github.com/devendrn/newb-x-mcbe/releases/latest) & [MCPEDL](https://mcpedl.com/).
 
 ## Installation
 

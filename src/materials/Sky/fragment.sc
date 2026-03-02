@@ -6,6 +6,7 @@
 #include <newb/config.h>
 #include <newb/functions/galaxy.h>
 #include <newb/functions/PBR.h>
+#include <yildrim/cloud.h>
 
 #ifndef INSTANCING
   #include <newb/main.sh>
@@ -29,7 +30,7 @@ float snoise(  vec2 p) {
    return mix(mix(randC(i+vec2(0.,0.)), randC(i+vec2(1.,0.)), u.x), mix(randC(i+vec2(0.,1.)), randC(i+vec2(1.,1.)), u.x), u.y);
 }
 
-float fbm(vec2 p,float x){
+float fBM(vec2 p,float x){
  float t = ViewPositionAndTime.w;
  float a = 0.;
  float b = 1.;
@@ -53,7 +54,7 @@ for(int i=0; i<4; i++){
  vec4 col = vec4_splat(0.0);
  float x = 1.7;
  for(int i = 0; i<6; i++){
- float re = fbm(uv,x);
+ float re = fBM(uv,x);
  vec3 c = vec3_splat(0.4);
  col.rgb = vec3_splat(0.4);
  col = col+vec4(c,re*0.5)*(1.0-col.a);
@@ -61,11 +62,11 @@ for(int i=0; i<4; i++){
  uv *= 1.015;
  }
  /*
- float a1 = 0.0, a2 = smoothstep(0.0,0.3,fbm(p.xy,1.0));
+ float a1 = 0.0, a2 = smoothstep(0.0,0.3,fBM(p.xy,1.0));
  float b = 1.0;
  float gr = 1.0;
  for(int j = 0; j<20; j++){
- a1 = smoothstep(0.0,0.3,fbm(p.xy,0.845));
+ a1 = smoothstep(0.0,0.3,fBM(p.xy,0.845));
  a1 -= float(j)/20.0;
  p.y *= 1.019;
  if(a1>a2){
@@ -78,7 +79,7 @@ for(int i=0; i<4; i++){
  float d = 1.0;
  for(int k = 0; k<10; k++){
  p.y += 0.1;
- float den = smoothstep(0.0,0.01,fbm(p.xy,0.845));
+ float den = smoothstep(0.0,0.01,fBM(p.xy,0.845));
  den *= d;
  d *= 0.95;
  c += den;
@@ -126,17 +127,18 @@ void main() {
     vec3 clouds = cloud(skyColor, viewDir);
     clouds *= vec3(0.6, 0.7, 0.85);
     // skyColor = clouds;
-    
-    // vec4 clouds = cirrus(uvC, vec3(1.0, 0.8, 0.7), normalize(mix(sunDir, moonDir, moonFactor)), viewDir);
-    // skyColor    = mix(skyColor, clouds.rgb, clouds.a);
 
-    vec3 sun = getSun(sunDir, viewDir, night1, dusk, dawn);
+    // vec3 sun = getSun(sunDir, viewDir, night1, dusk, dawn);
+    vec3 sun = sunS(sunDir, viewDir);
     sun *= (1.0-night1);
     vec3 moon = getMoon(moonDir, viewDir, night1);
     moon *= night1;
     skyColor += sun;
     // vec4 clouds = cumulusCloud(viewDir, ViewPositionAndTime.w, 0.5, vec3(1.0, 0.8, 0.7), skyColor, rain, 10);
 
+    vec4 Cirrus = cirrus(uvC, vec3(1.0, 0.8, 0.7), normalize(mix(sunDir, moonDir, moonFactor)), viewDir);
+    skyColor    = mix(skyColor, Cirrus.rgb, Cirrus.a);
+    
     #ifdef NL_SHOOTING_STAR
       skyColor += NL_SHOOTING_STAR*nlRenderShootingStar(viewDir, v_fogColor, v_underwaterRainTimeDay.z)*max(0.75, night1)*(1.0-rain);
     #endif

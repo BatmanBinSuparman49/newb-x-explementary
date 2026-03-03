@@ -57,6 +57,7 @@ void main() {
     moon *= night1;
     skyColor += sun;
 
+    vec2 uvC = viewDir.xz/viewDir.y;
     vec3 cirrusCol = vec3(1.0, 0.8, 0.7)*day + vec3(1.0, 0.52, 0.278)*twilight + vec3(0.5765, 0.584, 0.98)*night1;
     vec4 Cirrus = cirrus(uvC, cirrusCol, normalize(mix(sunDir, moonDir, moonFactor)), viewDir);
     // skyColor    = mix(skyColor, Cirrus.rgb, Cirrus.a);

@@ -18,12 +18,6 @@ on:
         - IOS
         - Merged
         - All
-        - Material
-      material:
-        description: 'Material name (Applicable only for Material platform)'
-        required: false
-        default: 'RenderChunk'
-        type: string
 
 jobs:
   windows:
@@ -118,26 +112,3 @@ jobs:
       with:
         name: newb-x-merged
         path: ./build/pack-merged
-
-  material:
-    runs-on: windows-2022
-    if:  ${{ (github.event.inputs.platform == 'Material') || (github.event.inputs.platform == 'All')}}
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5 
-      with:
-        python-version: '3.11' 
-        cache: 'pip'
-    - uses: actions/cache@v4
-      with:
-        key: env-files-win-laz
-        path: |
-          ${{ github.workspace }}/tool/data
-    - run: pip install -r requirements.txt
-    - run: |
-        .\build.bat setup
-        .\build.bat mats -p merged -m ${{ inputs.material }} --no-zip
-    - uses: actions/upload-artifact@v4
-      with:
-        name: newb-x-material-${{ inputs.material }}
-        path: ./build/mats-merged

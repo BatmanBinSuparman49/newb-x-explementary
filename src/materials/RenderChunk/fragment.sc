@@ -194,16 +194,6 @@ void main() {
 
   color.rgb *= lightTint;
 
-
-  /* #if defined(TRANSPARENT) && !(defined(SEASONS) || defined(RENDER_AS_BILLBOARDS))
-    if (v_extra.b > 0.9) {
-      diffuse.rgb = vec3_splat(1.0 - NL_WATER_TEX_OPACITY*(1.0 - diffuse.b*1.8));
-      diffuse.a = color.a;
-    }
-  #else
-    diffuse.a = 1.0;
-  #endif */
-
   float isLeaf = 0.0;
   #if defined(SEASONS) && (defined(ALPHA_TEST) || defined(OPAQUE))
     isLeaf = 1.0;

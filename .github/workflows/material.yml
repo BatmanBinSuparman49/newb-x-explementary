@@ -39,7 +39,7 @@ jobs:
         - run: pip install -r requirements.txt
         - run: |
             .\build.bat setup
-            .\build.bat mats -p merged -m ${{ github.event.inputs.material }} --no-zip
+            .\build.bat mats -p merged -m ${{ github.event.inputs.material }}
         - uses: actions/upload-artifact@v4
           with:
             name: Materials-merged
@@ -62,7 +62,7 @@ jobs:
         - run: pip install -r requirements.txt
         - run: |
             .\build.bat setup
-            .\build.bat mats -p android -m ${{ github.event.inputs.material }} --no-zip
+            .\build.bat mats -p android -m ${{ github.event.inputs.material }}
         - uses: actions/upload-artifact@v4
           with:
             name: Materials-windows
@@ -87,7 +87,7 @@ jobs:
         - run: |
             chmod +x build.sh
             ./build.sh setup
-            ./build.sh mats -p android -m ${{ github.event.inputs.material }} --no-zip
+            ./build.sh mats -p android -m ${{ github.event.inputs.material }}
         - uses: actions/upload-artifact@v4
           with:
             name: Materials-android
@@ -111,7 +111,7 @@ jobs:
         - run: |
             chmod +x build.sh
             ./build.sh setup
-            ./build.sh mats -p ios -m ${{ github.event.inputs.material }} --no-zip
+            ./build.sh mats -p ios -m ${{ github.event.inputs.material }}
         - uses: actions/upload-artifact@v4
           with:
             name: Materials-ios

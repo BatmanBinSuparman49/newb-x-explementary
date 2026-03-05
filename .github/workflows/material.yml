@@ -62,7 +62,7 @@ jobs:
         - run: pip install -r requirements.txt
         - run: |
             .\build.bat setup
-            .\build.bat mats -p android -m ${{ github.event.inputs.material }}
+            .\build.bat mats -p windows -m ${{ github.event.inputs.material }}
         - uses: actions/upload-artifact@v4
           with:
             name: Materials-windows

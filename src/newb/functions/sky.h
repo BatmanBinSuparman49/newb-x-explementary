@@ -79,9 +79,9 @@ vec4 timeofday(float dayTime){
 
 vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
     float sunDot = max((dot(sunDir, viewDir)), 0.0);
-    float core = pow(smoothstep(0.998, 1.0, sunDot), 0.48);
-    float corona = pow(sunDot, 64.0) * max(0.8 - 0.7 * night, 0.0);
-    float outerGlow = pow(sunDot, 8.0) * max(0.3 - 0.2 * night, 0.0);
+    float core = pow(smoothstep(0.998, 1.0, sunDot), 0.3);
+    float corona = pow(sunDot, 64.0);
+    float outerGlow = pow(sunDot, 8.0);
     float sun = core + corona + outerGlow;
     vec3 sunCol   = vec3(1.0, 0.98, 0.95);   
     vec3 dawnCol  = vec3(1.0, 0.35, 0.05);   
@@ -91,11 +91,14 @@ vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
     return sunCol * sun;
 }
 
-vec3 sunS(vec3 sunDir, vec3 viewDir){
+vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn) {
   float sunDot = max(0.0, 1.0 - dot(sunDir, viewDir));
   float m = 0.008 / (0.0001 + sunDot);
   m = pow(m, 1.5) * 0.1;
   vec3 sunCol = vec3(1.0, 0.98, 0.95);
+  vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
+  sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
+
   return sunCol * m;
 }
 
@@ -108,46 +111,6 @@ vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
     vec3 moonCol = vec3(1.0, 1.0, 1.0);
 
     return moonCol * (core * 20.0 + corona * 2.0 + outerGlow * 1.5);
-}
-
-const float mieCoeff = 25e-6;
-float miePhase(float cosTheta){
-    float g = 0.6;
-    return (3.0 / (8.0 * PI)) * ((1.0 - g * g) * (1.0 + cosTheta * cosTheta)) /
-           ((2.0 + g * g) * pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5)) * mieCoeff;
-}
-#define SKY_SUN_SHAPE 1
-vec3 basicSkyGradient(vec3 V, vec3 L, vec3 sunVector, float isWetness, float isUnderWater){
-float isUp= saturate(V.y);
-float isBottom = saturate(0.5 - V.y);
-float isHorizon= saturate(-V.y + 0.5);
-
-float isMie = miePhase(dot(V, L)) * 15e3 * 2.5 * smoothstep(-0.2, 0.05, L.y);
-float isSun = pow(max(smoothstep(0.83, 1.0, isMie) * 6.2, 0.0), 16.0) * mieCoeff * 2e-4 / 32.0;
-
-isBottom = max(isBottom + isMie * (1.0 - isWetness), 0.0);
-
-vec3 timeFactor = sunVector;
-timeFactor.x = smoothstep(0.05, 0.7, sunVector.y);
-timeFactor.z = smoothstep(0.05, -0.1, sunVector.y);
-
-/*				   / ~ sky color ~ /				    / ~ horizon color ~ /		  */
-vec3 dayColor = mix(vec3(0.65,0.8,1.0) * 1.2 - isUp * 0.5, vec3(0.72,0.85,1.0), isBottom);
-vec3 dawnColor = mix(vec3(0.65,0.78,0.93) - isUp * 0.5, vec3(0.82,0.7,0.42) * 0.85 + isMie * 0.2, isBottom - isMie * 0.5);
-vec3 nightColor = mix(vec3(0.5,0.6,1.0) * 0.2 - isUp * 0.1, vec3(0.2,0.3,0.4) * 0.5, isBottom);
-vec3 rainColor = mix(vec3_splat(0.4), vec3_splat(0.0) + isHorizon * 0.3, isBottom);
-vec3 undwColor =  vec3(0.15,0.5,0.8) * 0.6;
-
-vec3 color = mix(dawnColor * 1.2 - timeFactor.z, dayColor, timeFactor.x);
-color = mix(color, nightColor, timeFactor.z);
-color = mix(color, rainColor + isMie * 0.35, isWetness);
-color = mix(color, undwColor + isMie * 0.2, isUnderWater);
-
-#if SKY_SUN_SHAPE == 1
-color = mix(color, (sunS(L, V) * 0.8 + isMie * 0.65) * max(smoothstep(-0.2, 0.05, sunVector.y), 0.5), (clamp(sunS(L, V) * 16.0, 0.0, 1.0) + isMie * 0.6) * max(V.y, 0.0));
-#endif
-
-return pow(color, vec3_splat(1.5));
 }
 
 

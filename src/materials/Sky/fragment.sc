@@ -51,11 +51,14 @@ void main() {
 
     vec3 skyColor = nlRenderSky(skycol, env, -viewDir, v_fogColor, v_underwaterRainTimeDay.z);
 
-    vec3 sun = getSun(sunDir, viewDir, night1, dusk, dawn);
+    vec3 sun = sunS(sunDir, viewDir, dusk, dawn);
     sun *= (1.0-night1);
-    vec3 moon = getMoon(moonDir, viewDir, night1);
-    moon *= night1;
     skyColor += sun;
+
+    float sunA = clamp(((349.305545 * v_fogColor.g - 159.858192) * v_fogColor.g + 30.557216) * v_fogColor.g - 1.628452, -1.0, 1.0);
+    vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
+    vec3 moon = getMoon(-moonPos, viewDir, night1);
+    moon *= night1;
 
     vec2 uvC = viewDir.xz/viewDir.y;
     vec3 cirrusCol = vec3(1.0, 0.8, 0.7)*day + vec3(1.0, 0.52, 0.278)*twilight + vec3(0.5765, 0.584, 0.98)*night1;

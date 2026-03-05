@@ -1,0 +1,118 @@
+name: material
+
+on:
+    workflow_dispatch:
+        inputs:
+            platform:
+                description: 'Select the platform to build for'
+                required: true
+                default: 'All'
+                type: choice
+                options:
+                - All
+                - Windows
+                - Android
+                - IOS
+                - Merged
+
+            material:
+                description: 'Material name'
+                required: true
+                default: 'RenderChunk'
+                type: string
+
+jobs:
+    Merged:
+        runs-on: windows-2022
+        if: ${{ (github.event.inputs.platform == 'Merged') || (github.event.inputs.platform == 'All') }}
+        steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.11' 
+            cache: 'pip'
+        - uses: actions/cache@v4
+          with:
+            key: env-files-win-laz
+            path: |
+                ${{ github.workspace }}/tool/data
+        - run: pip install -r requirements.txt
+        - run: |
+            .\build.bat setup
+            .\build.bat mats -p merged -m ${{ github.event.inputs.material }} --no-zip
+        - uses: actions/upload-artifact@v4
+          with:
+            name: Materials-merged
+            path: ./build/merged
+
+    Windows:
+        runs-on: windows-2022
+        if: ${{ (github.event.inputs.platform == 'Windows') || (github.event.inputs.platform == 'All') }}
+        steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.11' 
+            cache: 'pip'
+        - uses: actions/cache@v4
+          with:
+            key: env-files-win-laz
+            path: |
+                ${{ github.workspace }}/tool/data
+        - run: pip install -r requirements.txt
+        - run: |
+            .\build.bat setup
+            .\build.bat mats -p android -m ${{ github.event.inputs.material }} --no-zip
+        - uses: actions/upload-artifact@v4
+          with:
+            name: Materials-windows
+            path: ./build/windows
+
+    Android:
+        runs-on: ubuntu-latest
+        if: ${{ (github.event.inputs.platform == 'Android') || (github.event.inputs.platform == 'All') }}
+        steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.11' 
+            cache: 'pip'
+        - uses: actions/cache@v4
+          with:
+            key: env-files-linux-laz
+            path: |
+                ${{ github.workspace }}/tool/data
+
+        - run: pip install -r requirements.txt
+        - run: |
+            chmod +x build.sh
+            ./build.sh setup
+            ./build.sh mats -p android -m ${{ github.event.inputs.material }} --no-zip
+        - uses: actions/upload-artifact@v4
+          with:
+            name: Materials-android
+            path: ./build/android
+                
+    IOS:
+        runs-on: ubuntu-latest
+        if: ${{ (github.event.inputs.platform == 'IOS') || (github.event.inputs.platform == 'All') }}
+        steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.11' 
+            cache: 'pip'
+        - uses: actions/cache@v4
+          with:
+            key: env-files-linux-laz
+            path: |
+                ${{ github.workspace }}/tool/data
+        - run: pip install -r requirements.txt
+        - run: |
+            chmod +x build.sh
+            ./build.sh setup
+            ./build.sh mats -p ios -m ${{ github.event.inputs.material }} --no-zip
+        - uses: actions/upload-artifact@v4
+          with:
+            name: Materials-ios
+            path: ./build/ios

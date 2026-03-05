@@ -152,10 +152,13 @@ vec4 applyWaterEffect(
     vec4 v_color2 = vec4(skycol.horizonEdge, time);
     vec4 roundedC = renderCloudsRounded(reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
-    vec3 sun = getSun(sunDir, reflDir, night, dusk, dawn);
+    vec3 sun = sunS(sunDir, reflDir, dusk, dawn);
     sun *= (1.0-night);
-    // sun *= getMie(sunDir, reflDir) * 4.0;
-    vec3 moon = getMoon(mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)), reflDir, night);
+
+    float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
+    vec3 moonPos = vec3(cos(sunA), sin(sunA), 0.7);
+    vec3 moon = getMoon(normalize(-moonPos), normalize(reflDir), night);
+    moon *= night;
 
     vec3 stars = vec3(0.0, 0.0, 0.0);
 

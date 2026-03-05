@@ -108,19 +108,12 @@ void main() {
   float endDist = FogAndDistanceControl.z*0.9;
   bool doEffect = (camDist < endDist);
 
-    vec4 gametime = timedetection(FogColor,FogAndDistanceControl);
-    float day1 = gametime.x,
-        night1 = gametime.y,
-        dusk1 = gametime.z,
-        rain1 = gametime.w;
-
     vec4 whatTime = timeofday(TimeOfDay.x);
       float night = whatTime.x;
       float day   = whatTime.w;
       float dusk  = whatTime.z;
       float dawn  = whatTime.y;
 
-    float weatherFactor = WeatherID.x; 
     float rain          = clamp(WeatherID.x, 0.0, 1.0);
     
   vec4 color = v_color0;
@@ -135,7 +128,10 @@ void main() {
   vec3 V = normalize(-viewDir);
   vec3 N = normalize(cross(dFdx(v_position), dFdy(v_position)));
   vec3 sunDir = normalize(SunDirection.xyz);
-  vec3 moonDir = mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk));
+  float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
+  vec3 sunPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
+  vec3 moonPos = -sunPos;
+  vec3 SunMoonDir = normalize(mix(sunDir, moonPos, night));
   
   vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
@@ -171,7 +167,7 @@ void main() {
      skycol = nlOverworldSkyColors(env.rainFactor,FogColor.rgb);
     }
 
-  float shadow = smoothstep(0.875,0.860, pow(v_lightmapUV.y,2.0));
+  float shadow = smoothstep(0.875, 0.860, pow(v_lightmapUV.y, 2.0));
   shadow = mix(shadow, 0.0, pow(v_lightmapUV.x * 1.2, 6.0)); 
   float shadowFactor = 1.0 - 0.25 * shadow;
   shadowFactor = max(shadowFactor, 0.5); 
@@ -206,20 +202,8 @@ void main() {
   float causticDist = FogAndDistanceControl.z*0.5;
   bool doCaustics = (camDist < causticDist);
 
-  // Caustics
-  if(doCaustics){
-    if (env.underwater || blockUnderWater){
-      float upwards = max(N.y, 0.0);
-      float caustics = E_UNDW(realPos, v_lightmapUV);
-      caustics *= upwards;
-      diffuse += caustics;
-    
-      vec3 watercol = vec3(1.0, 1.0, 1.0);
-      diffuse.rgb *= watercol;
-    }
-  }
   // water 
-  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir);
+  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir);
 
   // water absorption
   float depth = 1.0 - pow(v_lightmapUV.y,2.0);
@@ -240,17 +224,42 @@ void main() {
   }
 
   float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
-  vec3 dawnCol = vec3(1.0, 0.52, 0.278);
+  vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 
-  vec3 dayCol  = vec3_splat(1.0);
+  vec3 dayCol  = vec3(1.0, 0.98, 0.95);
   float twilight = saturate(dusk + dawn);
   sunDir *= (1.0-night);
   vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*night; 
 
+
+  // Caustics
+  if(doCaustics){
+    if (env.underwater || blockUnderWater){
+      float upwards = max(N.y, 0.0);
+      float caustics = E_UNDW(realPos, v_lightmapUV);
+      caustics *= upwards;
+      diffuse += caustics;
+    
+      vec3 watercol = specularCol*0.6;
+      diffuse.rgb *= watercol;
+    }
+  }
+
+  mat3 TBN = mat3(abs(N).y + N.z, 0.0, -N.x, 0.0, -abs(N).x - abs(N).z, abs(N).y, N);
+  vec3 ambVL = texture2D(s_LightMapTexture, vec2(0.0, v_lightmapUV.y)).rgb;
+  if(env.underwater){
+    if(!water){
+      vec3 causDir = normalize(mul(vec3(-1.0, -1.0, 0.1), TBN));
+      vec3 uwAmb = ambVL * vec3(0.0, 0.3, 0.8) + pow(v_lightmapUV.x, 3.0);
+      uwAmb += pow(saturate(dot(causDir, getWaterNormal(realPos.xz, ViewPositionAndTime.w).xzy)), 3.0) * v_lightmapUV.y * 32768;
+      // diffuse.rgb *= saturate(uwAmb);
+    }
+  }
+
   float glossstrength = 0.5;
   vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
 
-  vec3 specular = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
+  vec3 specular = brdf(SunMoonDir, V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
   float fresnel = pow(1.0 - dot(V, worldNormal), 3.0); 
   viewDir = reflect(viewDir, worldNormal);
   
@@ -261,13 +270,13 @@ void main() {
 
   // firmaments declarations for using in reflections  
   vec3 skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
-  vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain1, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
+  vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
   // specular highlights 
   float specDist = FogAndDistanceControl.z*0.67;
     if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && !blockUnderWater && isLeaf==0.0){
-      vec3 specHighlights = brdf_specular(normalize(mix(sunDir, moonDir, moonFactor)), V, worldNormal, 0.65, F0, specularCol);
+      vec3 specHighlights = brdf_specular(SunMoonDir, V, worldNormal, 0.65, F0, specularCol);
       specHighlights     *= (1.0-sideshadow);
       specHighlights     *= (1.0-shadow);
       diffuse.rgb += specHighlights;
@@ -279,7 +288,7 @@ void main() {
   float puddleNoise = mix(n1, n2, 0.25);
   float puddleMask  = smoothstep(0.35, 0.45, puddleNoise);
   puddleMask        = pow(puddleMask, 0.46);
-  vec3 puddleSpec = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.1, worldNormal, diffuse.rgb, 0.0, F0, vec3(0.05, 0.05, 0.05)*(1.0+night));
+  vec3 puddleSpec = brdf(SunMoonDir, V, 0.1, worldNormal, diffuse.rgb, 0.0, F0, vec3(0.05, 0.05, 0.05)*(1.0+night));
   float wetness = puddleMask * rain;
   puddleSpec *= wetness;
   vec3 puddleRefl = skyReflection * 1.2;

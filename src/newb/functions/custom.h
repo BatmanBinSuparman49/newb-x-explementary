@@ -111,11 +111,11 @@ vec3 getWaterNormal(vec2 uv, float t) {
 
 vec4 timedetection(vec4 FogColor,vec4 FogAndDistanceControl){
   float day1 = pow(max(min(1.0 - FogColor.r * 1.2, 1.0), 0.0), 0.4);
-  float night1 = pow(max(min(1.0 - FogColor.r * 1.5, 1.0), 0.0), 1.2);
+  float night = pow(max(min(1.0 - FogColor.r * 1.5, 1.0), 0.0), 1.2);
   float dusk1 = max(FogColor.r - FogColor.b, 0.0);
   float rain1 = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
   
-  return vec4(day1 ,night1 ,dusk1 ,rain1);
+  return vec4(day1 ,night ,dusk1 ,rain1);
 }
 
 vec4 applyWaterEffect(

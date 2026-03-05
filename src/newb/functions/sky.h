@@ -108,7 +108,7 @@ vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
     float corona = pow(moonDot, 32.0) * max(0.8 - 0.7 * night, 0.0);
     float outerGlow = pow(moonDot, 2.0) * max(0.3 - 0.2 * night, 0.0);
     float moon = core + corona + outerGlow;
-    vec3 moonCol = vec3(1.0, 1.0, 1.0);
+    vec3 moonCol = vec3(0.8, 0.9, 1.0);
 
     return moonCol * (core * 20.0 + corona * 2.0 + outerGlow * 1.5);
 }

@@ -245,7 +245,7 @@ void main() {
     }
   }
 
-  mat3 TBN = mat3(abs(N).y + N.z, 0.0, -N.x, 0.0, -abs(N).x - abs(N).z, abs(N).y, N);
+  /* mat3 TBN = mat3(abs(N).y + N.z, 0.0, -N.x, 0.0, -abs(N).x - abs(N).z, abs(N).y, N);
   vec3 ambVL = texture2D(s_LightMapTexture, vec2(0.0, v_lightmapUV.y)).rgb;
   if(env.underwater){
     if(!water){
@@ -254,7 +254,7 @@ void main() {
       uwAmb += pow(saturate(dot(causDir, getWaterNormal(realPos.xz, ViewPositionAndTime.w).xzy)), 3.0) * v_lightmapUV.y * 32768;
       // diffuse.rgb *= saturate(uwAmb);
     }
-  }
+  } */
 
   float glossstrength = 0.5;
   vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);

@@ -93,9 +93,9 @@ vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
 
 vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn) {
   float sunDot = max(0.0, 1.0 - dot(sunDir, viewDir));
-  float m = 0.008 / (0.0001 + sunDot);
-  m = pow(m, 1.5) * 0.1;
-  vec3 sunCol = vec3(1.0, 0.98, 0.95);
+  float m = 0.009 / (0.0001 + sunDot);
+  m = pow(m, 1.6) * 0.1;
+  vec3 sunCol = vec3(1.2, 0.95, 0.72);
   vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
   sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
 
@@ -104,7 +104,7 @@ vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn) {
 
 vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
     float moonDot = saturate(dot(moonDir, viewDir));
-    float core =   pow(smoothstep(0.998, 1.0, moonDot), 0.22);
+    float core =   pow(smoothstep(0.998, 1.0, moonDot), 0.26);
     float corona = pow(moonDot, 32.0) * max(0.8 - 0.7 * night, 0.0);
     float outerGlow = pow(moonDot, 2.0) * max(0.3 - 0.2 * night, 0.0);
     float moon = core + corona + outerGlow;

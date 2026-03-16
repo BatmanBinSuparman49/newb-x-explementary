@@ -41,7 +41,7 @@ vec3 nlLighting(
   } else if (env.nether) {
     torchColor = vec3(1.0,0.52,0.18);
   } else {
-    torchColor = mix(NL_OVERWORLD_TORCH_COL, vec3(0.4039, 0.3804, 0.9804), night);
+    torchColor = mix(NL_OVERWORLD_TORCH_COL, vec3(0.4039, 0.5804, 0.9804), night);
   }
 
   float torchAttenuation = (NL_TORCH_INTENSITY*uv1.x)/(0.5-0.45*lit.x);
@@ -63,8 +63,7 @@ vec3 nlLighting(
 
     float dayFactor = min(dot(FOG_COLOR.rgb, vec3(0.5,0.4,0.4))*(1.0 + 1.9*env.rainFactor), 1.0);
     float nightFactor = 1.0-dayFactor*dayFactor;
-    float rainDarkness = 1.0 - (env.rainFactor * 0.6); // 30% darker at full rain
-    float rainDim = min(FOG_COLOR.g, 0.25)*env.rainFactor * rainDarkness;
+    float rainDim = min(FOG_COLOR.g, 0.25)*env.rainFactor;
     float lightIntensity = NL_SUN_INTENSITY*(1.0 - rainDim)*(1.0 + NL_NIGHT_BRIGHTNESS*nightFactor);
 
     // min ambient in caves

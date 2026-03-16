@@ -125,7 +125,7 @@ vec4 cumulusCloud(vec3 viewDir, float time, float jitter, vec3 sunColor, vec3 sk
         vec3 noisePos = vec3(pos.xz * 0.1 + time * 0.002, height * 0.1);
         vec3 p_base = noisePos;
         p_base.y *= 1.5;
-        float tower = smoothstep(0.45, 0.5, cloudsNoise3D(p_base, 0.3));
+        float tower = smoothstep(0.3, 0.5, cloudsNoise3D(p_base, 0.3));
 
         vec3 p_top = noisePos;
         p_top.xz /= 2.5;
@@ -187,7 +187,7 @@ float fbm(vec2 p) {
     float amplitude = .5;
     float frequency = 1.5;
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 15; i++) {
         value += amplitude * noise(p * frequency);
         frequency *= 2.0;
         amplitude *= 0.5;
@@ -195,10 +195,8 @@ float fbm(vec2 p) {
     return value;
 }
 
-// --- Cirrus Cloud Logic ---
-
 vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
-    vec2 p = uv * vec2(12.0, 3.0);
+    vec2 p = uv * vec2(12.0, 4.0);
     float flow1 = fbm(p * 0.3) * 2.0;
     float flow2 = fbm(p * 0.15 + vec2_splat(100.0)) * 1.2;
     vec2 distorted = p + vec2(flow1 * 2.5, flow1 * 0.4) + vec2(flow2 * 0.8, flow2 * 0.2);

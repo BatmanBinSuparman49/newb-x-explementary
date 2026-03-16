@@ -52,7 +52,8 @@ highp float E_UNDW(vec3 v_position, vec2 v_uv1) {
 #define rot(x) mat2(cos(x), sin(x), -sin(x), cos(x))
 
 highp float hash(highp vec2 x){
-  return fract(sin(dot(x,vec2(11,57)))*4567.0+ViewPositionAndTime.w);
+  float t = ViewPositionAndTime.w * 0.5;
+  return fract(sin(dot(x,vec2(11,57)))*4567.0+t);
 }
 
 highp float ripplenoise(highp vec2 x, highp float k){
@@ -61,7 +62,7 @@ highp float ripplenoise(highp vec2 x, highp float k){
   return smoothstep(0.05,0.025,distance(d, r*k))*smoothstep(0.5,0.475,d)*((1.0-r)*k);
 }
 
-highp float ripple(highp vec2 x,float time){
+highp float ripple(highp vec2 x, float time){
   highp float result = 0.0;
 
     for(int i = 0; i<3; i++){
@@ -114,7 +115,7 @@ void main() {
       float dusk  = whatTime.z;
       float dawn  = whatTime.y;
 
-    float rain          = clamp(WeatherID.x, 0.0, 1.0);
+  float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
     
   vec4 color = v_color0;
 
@@ -136,6 +137,7 @@ void main() {
   vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
   vec3 reflectNormal = reflect(V, worldNormal);
+  float upwards = max(N.y, 0.0);
 
   bool water = v_extra.b > 0.9;
 
@@ -235,7 +237,6 @@ void main() {
   // Caustics
   if(doCaustics){
     if (env.underwater || blockUnderWater){
-      float upwards = max(N.y, 0.0);
       float caustics = E_UNDW(realPos, v_lightmapUV);
       caustics *= upwards;
       diffuse += caustics;
@@ -273,17 +274,30 @@ void main() {
   vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
+  vec3 rippleN = norm(realPos.xz*1.5, ViewPositionAndTime.w);
+  vec2 storeuv = v_texcoord0;
+  vec2 texuv   = reflect(vec3(storeuv,1.0), normalize(rippleN*2.0-1.0)*0.125);
+  vec4 rippleDiffuse = texture2D(s_MatTexture, texuv);
+  if(!water && !blockUnderWater && !env.underwater && !env.nether && !env.end){
+    rippleDiffuse *= upwards;
+    vec3 reflectionEffect = mix(rippleDiffuse.rgb, skyReflection, 0.4);
+    rippleDiffuse.rgb = mix(rippleDiffuse.rgb, reflectionEffect, upwards);
+    vec3 wetColor = diffuse.rgb * 0.6;
+    vec3 wetFinal = mix(wetColor, rippleDiffuse.rgb, 0.45);
+    diffuse.rgb = mix(diffuse.rgb, wetFinal, rain); 
+  }
+
   // specular highlights 
   float specDist = FogAndDistanceControl.z*0.67;
     if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && !blockUnderWater && isLeaf==0.0){
-      vec3 specHighlights = brdf_specular(SunMoonDir, V, worldNormal, 0.65, F0, specularCol);
+      vec3 specHighlights = brdf_specular(SunMoonDir, V, worldNormal, mix(0.65, 3.0, rain), F0, specularCol);
       specHighlights     *= (1.0-sideshadow);
       specHighlights     *= (1.0-shadow);
       diffuse.rgb += specHighlights;
     } 
 
-  /* // puddles 
-  float n1 = worley2(realPos.xz * 0.3).y - worley2(realPos.xz * 0.3 ).x;
+
+  /* float n1 = worley2(realPos.xz * 0.3).y - worley2(realPos.xz * 0.3 ).x;
   float n2 = worley2(realPos.xz * 0.02).y - worley2(realPos.xz * 0.02 ).x;
   float puddleNoise = mix(n1, n2, 0.25);
   float puddleMask  = smoothstep(0.35, 0.45, puddleNoise);
@@ -297,25 +311,15 @@ void main() {
     vec3 puddleBase = diffuse.rgb * mix(1.0, 0.4, wetness);
     vec3 puddleColor = mix(puddleBase, puddleRefl, reflStrength);
     diffuse.rgb = puddleColor;
-    //puddleSpec    *= mix(1.0, 3.0, wetness);
-    //puddleSpec    *= (1.0-sideshadow);
-    //puddleSpec    *= (1.0-shadow);
-    //diffuse.rgb += puddleSpec*0.67;
+    diffuse.rgb *= upwards;
+    puddleSpec    *= mix(1.0, 3.0, wetness);
+    puddleSpec    *= (1.0-sideshadow);
+    puddleSpec    *= (1.0-shadow);
+    diffuse.rgb += puddleSpec;
   } */
 
   float downwards = max(-N.y, 0.0);
   float notBottom = 1.0 - downwards;
-
-  /* vec3 rippleN = norm(realPos.xz, ViewPositionAndTime.w * 1.6);
-  float Rupwards = max(N.y, 0.0);
-  vec2 storeuv = v_texcoord0;
-  vec2 texuv   = reflect(vec3(storeuv,1.0), normalize(rippleN*2.0-1.0)*0.125);
-  vec4 rippleDiffuse = texture2D(s_MatTexture, texuv);
-  if(!water && !blockUnderWater && !env.underwater && !env.nether && !env.end){
-    rippleDiffuse *= Rupwards;
-    rippleDiffuse.rgb *= vec3(0.257, 0.257, 0.265);
-    diffuse += rippleDiffuse*rain;
-  } */
 
   vec3 fstars = vec3(0.0, 0.0, 0.0);
   if(!env.end && !env.nether){

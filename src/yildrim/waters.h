@@ -8,6 +8,8 @@
 #include "newb/functions/galaxy.h"
 #include "pbr.h"
 #include "newb/functions/clouds.h"
+#include "firmament.h"
+#include "atmosphere.h"
 
 #define NL_CLOUD_PARAMS(x) NL_CLOUD2##x##STEPS, NL_CLOUD2##x##THICKNESS, NL_CLOUD2##x##RAIN_THICKNESS, NL_CLOUD2##x##VELOCITY, NL_CLOUD2##x##SCALE, NL_CLOUD2##x##DENSITY, NL_CLOUD2##x##SHAPE
 
@@ -44,13 +46,11 @@ float noise(vec2 p)
 highp float getWave(highp vec2 uv, float time){
     float t = -time*1.0;
 
-    float tiles = 16.0;
-
     uv *= 1.5;
     uv = mul(uv, rotMat(80.0));
 
-    float A = sin(noise(t+mod(uv,tiles)-sin(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
-    float B = cos(noise(-t+mod(uv,tiles)+cos(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
+    float A = sin(noise(t+uv-sin(uv.y*0.2)+uv.x)) * 0.5;
+    float B = cos(noise(-t+uv+cos(uv.y*0.2)+uv.x)) * 0.5;
     return saturate(A + B);
 }
 
@@ -87,18 +87,6 @@ float getWaterHeight(vec2 uv, float time) {
     // return 0.05*Wave(uv, time);
 }
 
-vec4 getWaterNormalMapFromHeight(vec2 uv, vec2 resolution, float scale, float time) {
-  vec2 step = 1.0 / resolution;
-
-  float height = getWaterHeight(uv,time);
-
-  vec2 dxy = height - vec2(
-      getWaterHeight(uv + vec2(step.x, 0.0), time),
-      getWaterHeight(uv + vec2(0.0, step.y), time)
-  );
-  return vec4(normalize(vec3(dxy * scale / step, 1.0)), height); 
-}
-
 // another normal map function from code cave
 vec3 getWaterNormal(vec2 uv, float t) {
     float eps = 0.005;
@@ -126,15 +114,15 @@ vec4 applyWaterEffect(
     vec4 diffuse, vec4 reflectionColor, 
     nl_skycolor skycol, nl_environment  env, vec3 FogColor,
     float time, float night, float dusk, float dawn, float rain, float nolight,
-    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir
+    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N
 ) {
     if (!water) return diffuse;
 
     float endDist = FogAndDistanceControl*0.8;
     bool doEffect = (camDist < endDist);
 
-    // vec3 normal = getWaterNormalMapFromHeight(v_pos.xz, vec2(16.0, 16.0), 0.5, time).xzy;
-    vec3 normal = getWaterNormal(v_pos.xz, time).xzy;
+    vec3 Wnormal = getWaterNormal(v_pos.xz, time).xyz;
+    vec3 normal = mul(Wnormal, getTBN(N));
     vec3 reflDir = reflect(viewDir, normal);
 
     float glossstrength = 0.5;
@@ -155,7 +143,7 @@ vec4 applyWaterEffect(
     vec4 v_color2 = vec4(skycol.horizonEdge, time);
     vec4 roundedC = renderCloudsRounded(reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
-    vec3 sun = sunS(normalize(sunDir), normalize(reflDir), dusk, dawn);
+    vec3 sun = sunS(normalize(sunDir), normalize(reflDir), dusk, dawn, night);
     sun *= (1.0-night);
 
     float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);

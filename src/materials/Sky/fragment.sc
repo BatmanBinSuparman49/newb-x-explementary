@@ -49,13 +49,10 @@ void main() {
     vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
     vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
 
-    /* vec3 moonDir = mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)); // old moonDir
-    float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);  --- Unused, old moonDir
-    */
     vec3 skyColor = nlRenderSky(skycol, env, -viewDir, v_fogColor, v_underwaterRainTimeDay.z);
 
 
-    vec3 sun = sunS(sunDir, viewDir, dusk, dawn);
+    vec3 sun = sunS(sunDir, viewDir, dusk, dawn, night);
     sun *= (1.0-night);
     skyColor += sun;
     

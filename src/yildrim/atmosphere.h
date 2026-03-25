@@ -2,10 +2,10 @@
 #define ATMOSPHERE_H
 
 /* Sun & Moon */
-vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn) {
+vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn, float night) {
   float sunDot = max(0.0, 1.0 - dot(sunDir, viewDir));
-  float m = 0.009 / (0.0001 + sunDot);
-  m = pow(m, 1.6) * 0.1;
+  float m = 0.008 / (0.0001 + sunDot);
+  m = pow(m, 1.2) * 0.1;
   vec3 sunCol = vec3(1.2, 0.95, 0.72);
   vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
   sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));

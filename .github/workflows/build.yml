@@ -1,10 +1,6 @@
 name: build
 
 on:
-  push:
-    branches:
-      - main
-      - v2
   workflow_dispatch:
     inputs:
       subversion:

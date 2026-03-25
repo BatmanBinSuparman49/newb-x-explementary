@@ -1,5 +1,5 @@
 name = "Newb Explementary Edition"
-version = [0, 16, 0]
+version = [0, 2, 0]
 min_supported_mc_version = [1, 21, 130]
 description = '''A Newb variant by BatmanBinSuparman49 enhancing Minecraft's visuals while keeping vanilla aesthetics.
 §c%w

@@ -10,36 +10,80 @@ $input v_texcoord0, v_posTime, v_fogColor
   SAMPLER2D_AUTOREG(s_SkyTexture);
 #endif
 #include <newb/config.h>
-#include <newb/functions/starfield.h>
+#include <yildrim/starfield.h>
+#include <yildrim/cloud.h>
 
-// #define LYNX_SMOKE
+uniform vec4 ViewPositionAndTime;
 
-// Smoke/ End Clouds
-#define Author LYNXIUMMC
-//noise
-highp float rand3(highp vec2 x){
-    return fract(sin(dot(x, vec2(14.56, 56.2))) * 20000.);
+#define LYNX_SMOKE
+
+float randC( vec2 p){
+ return fract(cos(p.x +p.y * 13.0) * 335.552);
 }
 
-highp float noise(highp vec2 x){
-    highp vec2 ipos = floor(x);
-    highp vec2 fpos = fract(x);
-    fpos = smoothstep(0., 1., fpos);
-    float a = rand3(ipos), b = rand3(ipos + vec2(1, 0)),
-        c = rand3(ipos + vec2(0, 1)), d = rand3(ipos + 1.);
- return mix(a, b, fpos.x) + (c - a) * fpos.y * (1.0 - fpos.x) + (d - b) * fpos.x * fpos.y;
+float snoise(  vec2 p) {
+   vec2 i = floor(p);
+   vec2 f = fract(p);
+   vec2 u = pow(f, vec2(2.0, 2.0))*(2. - 1.0*f);
+
+   return mix(mix(randC(i+vec2(0.,0.)), randC(i+vec2(1.,0.)), u.x), mix(randC(i+vec2(0.,1.)), randC(i+vec2(1.,1.)), u.x), u.y);
 }
 
-highp float Clouds(vec2 uv){
-    float a = 1.;
-    float b = .1;
-    const int pvp = 3;
-    for(int lop = 0; lop < pvp; lop++){
-        b+= noise(uv)/a;
-        a *= 2.5;
-        uv *= 3.;
-        }
-        return 1.-pow(0.1,max(.8-b,.0));
+float fBM(vec2 p,float x){
+ float t = ViewPositionAndTime.w;
+ float a = 0.;
+ float b = 1.;
+ p += t*vec2(0.09,0.02);
+for(int i=0; i<4; i++){
+ a += snoise(p)*x/b;
+ b *= 1.7;
+ p *= 2.6;
+ p += t*sin(float(i));
+}
+
+ return max(1.-a,0.);
+}
+
+vec3 cloudEND(vec3 sky, vec3 p) {
+    // 1. Robust Projection
+    // We use a small epsilon and a tighter scale to bring the clouds "closer"
+    float py = abs(p.y) + 0.001; 
+    vec2 uv = (p.xz / py) * 0.4; 
+    
+    // Slower, more 'ethereal' movement
+    float t = ViewPositionAndTime.w * 0.015;
+    uv += vec2(t, t * 0.3);
+
+    // 2. Horizon and Zenith Masks
+    // This ensures clouds stay in a 'belt' around the mid-sky
+    float horizonMask = smoothstep(0.02, 0.2, p.y);
+    float zenithMask = smoothstep(1.0, 0.5, p.y);
+    float finalMask = horizonMask * zenithMask;
+
+    // 3. Boosting the Noise (The 'Visibility' Fix)
+    // We sample the noise and then "overdrive" it to ensure it's visible
+    float noiseVal = fBM(uv, 1.2); 
+    
+    // We use a very low edge (0.1) to make sure even weak noise shows up
+    float alpha = smoothstep(0.1, 0.6, noiseVal) * finalMask;
+    
+    // 4. End Dimension Palette (British English: Colour)
+    // Using high-saturation purples to contrast against the dark sky
+    vec3 deepVoid  = vec3(0.2, 0.0, 0.3);   // Dark Purple
+    vec3 endGlow   = vec3(0.7, 0.2, 0.9);   // Bright Magenta
+    vec3 starWhite = vec3(0.9, 0.7, 1.0);   // 3D Rim Highlight
+
+    // 5. Adding 3D "Pop"
+    // Calculate a 'slope' for lighting by offsetting the UV slightly
+    float slope = noiseVal - fBM(uv + vec2_splat(0.01), 1.0);
+    vec3 cloudColor = mix(deepVoid, endGlow, noiseVal);
+    cloudColor += smoothstep(0.0, 0.1, slope) * starWhite * 0.5;
+
+    // 6. Traditional Final Composition
+    // Increase the alpha intensity (1.5x multiplier) for better visibility
+    vec3 finalRGB = mix(sky, cloudColor, clamp(alpha * 1.5, 0.0, 1.0));
+
+    return finalRGB;
 }
 
 void main() {
@@ -58,14 +102,12 @@ void main() {
 
     // Lynx clouds/ Smoke
     #ifdef LYNX_SMOKE
-      vec2 uv0 = viewDir.xz/viewDir.y;
-      float lynx = Clouds(uv0 + v_posTime.w * 0.1);
-      color = mix(color, vec3(1.1, 0.4, 1.7), lynx);
+      color = cloudEND(color, viewDir);
     #endif
     
     // Add the starfield effect
     #ifdef STARFIELD 
-      color += renderStarfield(viewDir, v_posTime.w) * 0.5;
+      color += renderStarfield(viewDir + v_posTime.w*0.0001, v_posTime.w*0.001) * 0.5;
     #endif
 
     #ifdef END_LYNX_AURORA

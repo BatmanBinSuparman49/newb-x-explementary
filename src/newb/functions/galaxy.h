@@ -1,5 +1,6 @@
 #include "detection.h"
 #include "noise.h"
+#include "newb/config.h"
 
 vec3 nlGalaxy(vec3 vdir, vec3 fogColor, nl_environment env, float t) {
   vec3 stars;

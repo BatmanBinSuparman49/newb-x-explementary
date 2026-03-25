@@ -2,11 +2,10 @@ $input v_color0, v_color1, v_fog, v_refl, v_texcoord0, v_lightmapUV, v_extra, v_
 
 #include <bgfx_shader.sh>
 #include <newb/main.sh>
-#include <newb/functions/custom.h>
-#include <newb/functions/starfield.h>
-#include <newb/functions/PBR.h>
-#include <newb/functions/puddles.h>
-
+#include <yildrim/starfield.h>
+#include <yildrim/pbr.h>
+#include <yildrim/puddles.h>
+#include <yildrim/waters.h>
 
 SAMPLER2D_AUTOREG(s_MatTexture);
 SAMPLER2D_AUTOREG(s_SeasonsTexture);

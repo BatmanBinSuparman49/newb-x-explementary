@@ -3,10 +3,10 @@
 #endif
 
 #include <bgfx_shader.sh>
-#include <newb/config.h>
 #include <newb/functions/galaxy.h>
-#include <newb/functions/PBR.h>
 #include <yildrim/cloud.h>
+#include <yildrim/atmosphere.h>
+#include <yildrim/firmament.h>
 
 #ifndef INSTANCING
   #include <newb/main.sh>
@@ -44,28 +44,29 @@ void main() {
       skycol = nlOverworldSkyColors(env.rainFactor, v_fogColor.rgb);
     }
 
-    vec3 skyColor = nlRenderSky(skycol, env, -viewDir, v_fogColor, v_underwaterRainTimeDay.z);
-
     vec3 sunDir = normalize(SunDirection.xyz);
-    vec3 moonDir = mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)); // old moonDir
-    float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
-
     float sunA = clamp(((349.305545 * v_fogColor.g - 159.858192) * v_fogColor.g + 30.557216) * v_fogColor.g - 1.628452, -1.0, 1.0);
     vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
     vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
 
+    /* vec3 moonDir = mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)); // old moonDir
+    float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);  --- Unused, old moonDir
+    */
+    vec3 skyColor = nlRenderSky(skycol, env, -viewDir, v_fogColor, v_underwaterRainTimeDay.z);
+
+
     vec3 sun = sunS(sunDir, viewDir, dusk, dawn);
     sun *= (1.0-night);
     skyColor += sun;
-
-
+    
     vec3 moon = getMoon(-moonPos, viewDir, night);
     moon *= night;
+    skyColor += moon;
 
     vec2 uvC = viewDir.xz/viewDir.y;
     vec3 cirrusCol = vec3(1.0, 0.8, 0.7)*day + vec3(1.0, 0.35, 0.05)*twilight + vec3(0.5765, 0.584, 0.98)*night;
     vec4 Cirrus = cirrus(uvC, cirrusCol, SunMoonDir, viewDir);
-    skyColor    = mix(skyColor, Cirrus.rgb, Cirrus.a);
+    skyColor    = mix(skyColor, Cirrus.rgb*1.5, Cirrus.a);
     
     #ifdef NL_SHOOTING_STAR
       skyColor += NL_SHOOTING_STAR*nlRenderShootingStar(viewDir, v_fogColor, v_underwaterRainTimeDay.z)*max(0.75, night)*(1.0-rain);
@@ -81,7 +82,7 @@ void main() {
     #ifdef FALLING_STARS 
       if(!env.underwater){
         vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
-        float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w);
+        float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w) * smoothstep(0.0, 0.5, viewDir.y);
         vec3 starColor = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
         float starFactor     = smoothstep(0.5, 1.0, night)*(1.0-rain);
         starColor     *= starFactor;
@@ -94,9 +95,6 @@ void main() {
     #endif
 
     skyColor = colorCorrection(skyColor);
-
-    skyColor += moon;
-
     gl_FragColor = vec4(skyColor, 1.0);
   #else
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);

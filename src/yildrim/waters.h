@@ -1,10 +1,13 @@
+#ifndef WATERS_H
+#define WATERS_H
+
 #define PI 3.141592
 
-#include "sky.h"
+#include "newb/functions/sky.h"
 #include "newb/config.h"
-#include "galaxy.h"
-#include "PBR.h"
-#include "clouds.h"
+#include "newb/functions/galaxy.h"
+#include "pbr.h"
+#include "newb/functions/clouds.h"
 
 #define NL_CLOUD_PARAMS(x) NL_CLOUD2##x##STEPS, NL_CLOUD2##x##THICKNESS, NL_CLOUD2##x##RAIN_THICKNESS, NL_CLOUD2##x##VELOCITY, NL_CLOUD2##x##SCALE, NL_CLOUD2##x##DENSITY, NL_CLOUD2##x##SHAPE
 
@@ -216,3 +219,5 @@ vec4 applyWaterEffect(
     }
     return diffuse;
 }
+
+#endif

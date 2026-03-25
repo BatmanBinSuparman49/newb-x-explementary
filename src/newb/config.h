@@ -1,32 +1,6 @@
 #ifndef NL_CONFIG_H
 #define NL_CONFIG_H
 
-/*
-  NEWB SHADER MAIN CONFIG
-  This part contains base configuration options for the shader.
-
-  TOGGLES
-  - If [toggle] is mentioned, then
-    options can be commented to disable (by adding '//')
-  - eg: #define PLANTS_WAVE    -> this is ON
-        //#define PLANTS_WAVE  -> this is OFF
-
-  COLOR VALUES
-  - Color format: vec3(red,green,blue)
-  - 1.0 means 100%, 0.0 means 0%
-  - eg: vec3(1.0,1.0,0.0) = yellow
-
-  VALUES
-  - Values must be decimal
-  - eg. 32 is wrong, 32.0 is correct
-
-  TYPES
-  - Should be integer. options to choose will be mentioned there
-  - eg: #define NL_CLOUD_TYPE 2
-
-  Remember to rebuild the shader after making changes.
-*/
-
 /* Color correction */
 #define NL_TONEMAP_TYPE 9              // 1:Exponential, 2:Reinhard, 3:Extended Reinhard, 4:ACES 5:John Habel's filmic (used in BSBE) 
 #define NL_GAMMA 1.1                  // 0.3 low ~ 2.0 high
@@ -246,13 +220,6 @@
 #define NL_BH_SPEED 0.3
 
 /*
-  NEWB SHADER SUBPACK CONFIG
-  This part contains custom configuration options for each subpack.
-
-  If a value is already defined,
-  then you must undefine it before modifying:
-  eg: #undef OPTION_NAME
-
   Subpack names and flags are inside `pack_config.toml`.
   Build tool will enable corresponding flags when compiling. 
 */

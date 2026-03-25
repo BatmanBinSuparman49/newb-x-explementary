@@ -1,6 +1,10 @@
 name: build
 
 on:
+  push:
+    branches:
+      - main
+      - v2
   workflow_dispatch:
     inputs:
       subversion:
@@ -10,7 +14,7 @@ on:
       platform:
         description: 'platform'
         required: true
-        default: 'All'
+        default: 'Merged'
         type: choice
         options:
         - Android

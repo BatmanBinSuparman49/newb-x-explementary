@@ -91,14 +91,6 @@ vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
     return sunCol * sun;
 }
 
-vec3 sunS(vec3 sunDir, vec3 viewDir){
-  float sunDot = max(0.0, 1.0 - dot(sunDir, viewDir));
-  float m = 0.008 / (0.0001 + sunDot);
-  m = pow(m, 1.5) * 0.1;
-  vec3 sunCol = vec3(1.0, 0.98, 0.95);
-  return sunCol * m;
-}
-
 vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
     float moonDot = saturate(dot(moonDir, viewDir));
     float core =   pow(smoothstep(0.998, 1.0, moonDot), 0.22);
@@ -109,47 +101,6 @@ vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
 
     return moonCol * (core * 20.0 + corona * 2.0 + outerGlow * 1.5);
 }
-
-const float mieCoeff = 25e-6;
-float miePhase(float cosTheta){
-    float g = 0.6;
-    return (3.0 / (8.0 * PI)) * ((1.0 - g * g) * (1.0 + cosTheta * cosTheta)) /
-           ((2.0 + g * g) * pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5)) * mieCoeff;
-}
-#define SKY_SUN_SHAPE 1
-vec3 basicSkyGradient(vec3 V, vec3 L, vec3 sunVector, float isWetness, float isUnderWater){
-float isUp= saturate(V.y);
-float isBottom = saturate(0.5 - V.y);
-float isHorizon= saturate(-V.y + 0.5);
-
-float isMie = miePhase(dot(V, L)) * 15e3 * 2.5 * smoothstep(-0.2, 0.05, L.y);
-float isSun = pow(max(smoothstep(0.83, 1.0, isMie) * 6.2, 0.0), 16.0) * mieCoeff * 2e-4 / 32.0;
-
-isBottom = max(isBottom + isMie * (1.0 - isWetness), 0.0);
-
-vec3 timeFactor = sunVector;
-timeFactor.x = smoothstep(0.05, 0.7, sunVector.y);
-timeFactor.z = smoothstep(0.05, -0.1, sunVector.y);
-
-/*				   / ~ sky color ~ /				    / ~ horizon color ~ /		  */
-vec3 dayColor = mix(vec3(0.65,0.8,1.0) * 1.2 - isUp * 0.5, vec3(0.72,0.85,1.0), isBottom);
-vec3 dawnColor = mix(vec3(0.65,0.78,0.93) - isUp * 0.5, vec3(0.82,0.7,0.42) * 0.85 + isMie * 0.2, isBottom - isMie * 0.5);
-vec3 nightColor = mix(vec3(0.5,0.6,1.0) * 0.2 - isUp * 0.1, vec3(0.2,0.3,0.4) * 0.5, isBottom);
-vec3 rainColor = mix(vec3_splat(0.4), vec3_splat(0.0) + isHorizon * 0.3, isBottom);
-vec3 undwColor =  vec3(0.15,0.5,0.8) * 0.6;
-
-vec3 color = mix(dawnColor * 1.2 - timeFactor.z, dayColor, timeFactor.x);
-color = mix(color, nightColor, timeFactor.z);
-color = mix(color, rainColor + isMie * 0.35, isWetness);
-color = mix(color, undwColor + isMie * 0.2, isUnderWater);
-
-#if SKY_SUN_SHAPE == 1
-color = mix(color, (sunS(L, V) * 0.8 + isMie * 0.65) * max(smoothstep(-0.2, 0.05, sunVector.y), 0.5), (clamp(sunS(L, V) * 16.0, 0.0, 1.0) + isMie * 0.6) * max(V.y, 0.0));
-#endif
-
-return pow(color, vec3_splat(1.5));
-}
-
 
 // 1D sky with three color gradient
 vec3 renderOverworldSky(nl_skycolor skycol, vec3 viewDir) {
@@ -194,26 +145,6 @@ vec3 renderEndSky(vec3 horizonCol, vec3 zenithCol, vec3 viewDir, float t) {
 
   return sky;
 } 
-/*
-vec3 renderEndSky(vec3 horizonCol, vec3 zenithCol, vec3 v, float t){
-  vec3 sky = vec3(0.0,0.0,0.0);
-  v.y = smoothstep(-0.9,1.18,abs(v.y));
-  v.x += 0.0*sin(0.0*v.y - t + v.z);
-
-  float a = atan2(v.x,v.z);
-
-  float s = sin(a*15.0 + 0.4*t);
-  s = s*s;
-  s *= 0.09 + 0.32 *sin(a*13.0 - 1.1*t);
-  float g = smoothstep(0.89-s, -1.5, v.y);
-
-  float f = (1.0*g + 1.33*smoothstep(1.2,-0.18,v.y));
-  float h = (1.2*g + 0.58*smoothstep(0.6,-0.4,v.y));
-  sky += mix(zenithCol, horizonCol, f*f);
-  sky += (g*g*0.4 + 0.5*h*h*h*h*h)*vec3(7.0,0.4,6.0);
-  
-  return sky;
-} */
 
 vec3 nlRenderSky(nl_skycolor skycol, nl_environment env, vec3 viewDir, vec3 FOG_COLOR, float t) {
   vec3 sky;
@@ -245,45 +176,6 @@ vec3 nlRenderSky(nl_skycolor skycol, nl_environment env, vec3 viewDir, vec3 FOG_
   }
 
   return sky;
-}
-
-//Black Hole by devendrn
-vec4 renderBlackhole(vec3 vdir, float t) {
-  t *= NL_BH_SPEED;
-    
-  float r = 2.4;
-  r += 0.1*t;
-  vec3 vr = vdir;
-  mat2 rotMat = mat2(cos(r), -sin(r), sin(r), cos(r)); // Construct matrix
-  vr.xy = mul(rotMat, vr.xy);
-  r *= 2.0;
-  vr.yz = mul(rotMat, vr.yz);
-
-  vr.xy = mul(vr.xy, mtxFromRows(vec2(cos(r), -sin(r)), vec2(sin(r), cos(r))));
-  r*= 2.0;
-  vr.yz = mul(vr.zy, mtxFromRows(vec2(cos(r), -sin(r)), vec2(sin(r), cos(r))));
-  vec3 vd = vr-vec3(0.0, -1.0, 0.0);
-  float nl = sin(15.0*vd.x + t)*sin(15.0*vd.y - t)*sin(15.0*vd.z + t);
-  float a = atan2(vd.x, vd.z);
-    
-  float d = NL_BH_DIST*length(vd + 0.003*nl);
-  // d *= 1.2 + 0.8*sin(0.2*t);
-  float d0 = (0.6-d)/0.6;
-  float dm0 = 1.0-max(d0, 0.0);
-    
-  float gl = 1.0-clamp(-0.3*d0, 0.0, 1.0);
-  float gla = pow(1.0-min(abs(d0), 1.0), 8.0);
-  float gl8 = pow(gl, 8.0);
-    
-  float hole = 0.9*pow(dm0, 32.0) + 0.1*pow(dm0, 3.0);
-  float bh = (gla + 0.8*gl8 + 0.2*gl8*gl8) * hole;
-    
-  float df = sin(3.0*a - 4.0*d + 24.0*pow(1.4-d, 4.0) + t);
-  df *= 0.9 + 0.1*sin(8.0*a + d + 4.0*t - 4.0*df);
-  bh *= 1.0 + pow(df, 4.0)*hole*max(1.0-bh, 0.0);
-    
-  vec3 col = bh*4.0*mix(NL_BH_COL_LOW, NL_BH_COL_HIGH , min(bh, 1.0));
-  return vec4(col, hole);
 }
 
 // sky reflection on plane

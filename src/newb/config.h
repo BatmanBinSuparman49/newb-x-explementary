@@ -146,11 +146,11 @@
 #define NL_AURORA_COL2 vec3(0.1,0.0,1.0)
 
 /* Lynx Aurora*/
-#define LYNX_AURORA                             // [toggle] LYNX_AURORA :gigachad:
+// #define LYNX_AURORA                             // [toggle] LYNX_AURORA :gigachad:
 // #define END_LYNX_AURORA
 
 /* Falling Stars by i11212 */
-#define FALLING_STARS                             // [toggle]
+// #define FALLING_STARS                             // [toggle]
 #define NL_FALLING_STARS_VELOCITY    10.0    
 #define NL_FALLING_STARS_DENSITY     0.004        // 0.001 rare ~ 0.05 many
 #define NL_FALLING_STARS_SCALE       28.0          // greater value = smaller stars
@@ -178,7 +178,7 @@
 #define NL_END_GALAXY_DAY_VISIBILITY 0.0
 
 // Overworld Galaxy
-#define NL_GALAXY_STARS     4.0           // [toggle]
+// #define NL_GALAXY_STARS     4.0           // [toggle]
 #define NL_GALAXY_VIBRANCE 0.8          // 0.0 white - 1.0 colorful
 #define NL_GALAXY_SPEED 0.01            // 0.01 slow motion - 0.2 fast motion
 #define NL_GALAXY_DAY_VISIBILITY 0.0    // 0.0 invisible - 1.0 visible
@@ -191,7 +191,7 @@
 #define NL_SUN_SIZE 0.2     // 0.3 tiny ~ 4.0 massive
 #define NL_MOON_SIZE 0.45     //separate moon size scale
 /* Fake godrays during sunrise/sunset */
-#define NL_GODRAY 0.8 // [toggle] 0.1 subtle ~ 0.8 strong
+// #define NL_GODRAY 0.8 // [toggle] 0.1 subtle ~ 0.8 strong
 
 /* Sky reflection */
 #define NL_GROUND_REFL 0.7       // [toggle] 0.2 slightly reflective ~ 1.0 fully reflect sky 

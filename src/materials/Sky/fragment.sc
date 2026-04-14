@@ -18,6 +18,8 @@ uniform vec4 ViewPositionAndTime;
 uniform vec4 SunDirection;
 uniform vec4 TimeOfDay;
 
+SAMPLER2D_AUTOREG(s_cirrusTex);
+
 void main() {
   #ifndef INSTANCING
     vec3 viewDir = normalize(v_worldPos);
@@ -49,21 +51,25 @@ void main() {
     vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
     vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
 
+    vec3 sunCol = vec3(1.2, 0.95, 0.72);
+    vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
+    sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
+
     vec3 skyColor = nlRenderSky(skycol, env, -viewDir, v_fogColor, v_underwaterRainTimeDay.z);
-
-
-    vec3 sun = sunS(sunDir, viewDir, dusk, dawn, night);
-    sun *= (1.0-night);
-    skyColor += sun;
+    vec3 sky = getAtmosphere(s_cirrusTex, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 1.0);
     
     vec3 moon = getMoon(-moonPos, viewDir, night);
     moon *= night;
-    skyColor += moon;
+    sky += moon;
 
-    vec2 uvC = viewDir.xz/viewDir.y;
-    vec3 cirrusCol = vec3(1.0, 0.8, 0.7)*day + vec3(1.0, 0.35, 0.05)*twilight + vec3(0.5765, 0.584, 0.98)*night;
-    vec4 Cirrus = cirrus(uvC, cirrusCol, SunMoonDir, viewDir);
-    skyColor    = mix(skyColor, Cirrus.rgb*1.5, Cirrus.a);
+    // vec2 uvC = viewDir.xz/viewDir.y;
+    vec3 cloudCol = vec3(1.0, 0.8, 0.75)*day + vec3(0.8, 0.35, 0.05)*saturate(dawn+dusk) + vec3(0.5765, 0.584, 0.98)*night;
+    // vec4 Cirrus = cirrus(uvC, cloudCol, SunMoonDir, viewDir);
+    // sky    = mix(sky, Cirrus.rgb*1.5, Cirrus.a); 
+
+    float jitter = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    vec4 clouds3D = VLClouds(viewDir, SunMoonDir, cloudCol, ViewPositionAndTime.w, jitter);
+    // sky = mix(sky, clouds3D.rgb, clouds3D.a);
     
     #ifdef NL_SHOOTING_STAR
       skyColor += NL_SHOOTING_STAR*nlRenderShootingStar(viewDir, v_fogColor, v_underwaterRainTimeDay.z)*max(0.75, night)*(1.0-rain);
@@ -91,8 +97,8 @@ void main() {
       skyColor += NL_GALAXY_STARS*nlGalaxy(viewDir, v_fogColor, env, v_underwaterRainTimeDay.z);
     #endif
 
-    skyColor = colorCorrection(skyColor);
-    gl_FragColor = vec4(skyColor, 1.0);
+    skyColor = colorCorrection(sky);
+    gl_FragColor = vec4(sky, 1.0);
   #else
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
   #endif

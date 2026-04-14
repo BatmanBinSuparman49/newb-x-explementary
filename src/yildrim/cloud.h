@@ -1,29 +1,7 @@
 #ifndef CLOUD_H
 #define CLOUD_H
 
-/* Cumulus Clouds by Lynx */
-
-// Noise for Cumulus Clouds
-
-float fastVoronoi3D(vec3 pos, float f) {
-    vec3 p1 = fract(pos) - 0.5;
-    vec3 p2 = fract(pos.zxy + vec3(0.12, 0.34, 0.56)) - 0.5;
-    
-    float d1 = dot(p1, p1);
-    float d2 = dot(p2, p2);
-    
-    return 1.0 - f * min(d1, d2);
-}
-
-float cloudsNoise3D(vec3 p, float t) {
-    float n = fastVoronoi3D(p + t * 0.1, 1.8);
-    n *= fastVoronoi3D(3.0 * p + t * 0.2, 1.5);
-    n *= fastVoronoi3D(9.0 * p + t * 0.4, 0.4);
-    n *= fastVoronoi3D(27.0 * p + t * 0.8, 0.1);
-    
-    return n * n;
-}
-
+// Noise 
 float hash13(vec3 p3) {
     p3 = fract(p3 * 0.1031);
     p3 += dot(p3, p3.zyx + 31.32);
@@ -59,17 +37,177 @@ float newnoise(vec3 p) {
 #define hpi (pi / 2.0)
 #define tau (pi * 2.0)
 
-// Fractal Brownian Motion for Cumulus Clouds
+/* Cirrus clouds by Lynx */ 
+
+float hash12(vec2 p) {
+    const vec3 K = vec3(0.3183099, 0.3678794, 43758.5453);
+    vec3 x = fract(vec3(p.xyx) * K.x + K.y);
+    x += dot(x, x.yzx + 19.19);
+    return fract((x.x + x.y) * x.z);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    float a = hash12(i + vec2(0.0, 0.0));
+    float b = hash12(i + vec2(1.0, 0.0));
+    float c = hash12(i + vec2(0.0, 1.0));
+    float d = hash12(i + vec2(1.0, 1.0));
+
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+    float value = 0.0;
+    float amplitude = .5;
+    float frequency = 1.5;
+
+    for (int i = 0; i < 15; i++) {
+        value += amplitude * noise(p * frequency);
+        frequency *= 2.0;
+        amplitude *= 0.5;
+    }
+    return value;
+}
+
+/*
+vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
+    vec2 p = uv * vec2(12.0, 4.0);
+    float flow1 = fbm(p * 0.3) * 2.0;
+    float flow2 = fbm(p * 0.15 + vec2_splat(100.0)) * 1.2;
+    vec2 distorted = p + vec2(flow1 * 2.5, flow1 * 0.4) + vec2(flow2 * 0.8, flow2 * 0.2);
+    float clouds = fbm(distorted * 0.18);
+    clouds += fbm(distorted * 0.4 + vec2_splat(50.0)) * 0.5;
+    clouds += fbm(distorted * 1.2 + vec2_splat(200.0)) * 0.25;
+    clouds /= 1.75;
+    clouds = smoothstep(0.35, 0.75, clouds);
+    float gaps = fbm(p * 0.25 + vec2_splat(300.0));
+    clouds *= smoothstep(0.3, 0.6, gaps);
+    float scattering = dot(sunDir, viewDir) * 0.5 + 0.5;
+    float forwardScatter = pow(max(scattering, 0.0), 2.0);
+    float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.3;
+    float totalScatter = 0.6 + forwardScatter * 0.8 + backScatter;
+    vec3 cloudColor = sunColor * totalScatter;
+    cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;
+    clouds *= 0.85 * smoothstep(0.05, 1.0, viewDir.y);
+    return vec4(cloudColor, clouds);
+} */
+
+vec4 cirrus(sampler2D NOISE_0, vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
+    vec2 p = uv * vec2(12.0, 4.0)*0.1;
+
+    vec3 cirrusNoise = texture2D(NOISE_0, p).rgb;
+    vec2 distorted = p + (cirrusNoise.b * 0.15) + (cirrusNoise.g * 0.05);
+    vec3 distortedNoise = texture2D(NOISE_0, distorted).rgb;
+
+    float clouds = (distortedNoise.r + distortedNoise.g * 0.5) / 1.5;
+    clouds += fbm(distorted * 0.4 + vec2_splat(50.0)) * 0.5;
+    clouds += fbm(distorted * 1.2 + vec2_splat(200.0)) * 0.25;
+    clouds /= 1.75;
+    clouds = smoothstep(0.35, 0.75, clouds);
+
+    float gaps = texture2D(NOISE_0, p * 0.5 + 0.3).r;
+    clouds *= smoothstep(0.3, 0.6, gaps);
+    float scattering = dot(sunDir, viewDir) * 0.5 + 0.5;
+    float forwardScatter = pow(max(scattering, 0.0), 2.0);
+    float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.3;
+    float totalScatter = 0.6 + forwardScatter * 0.8 + backScatter;
+    vec3 cloudColor = sunColor * totalScatter;
+    cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;
+    clouds *= 0.85 * smoothstep(0.05, 1.0, viewDir.y);
+    return vec4(cloudColor, clouds);
+}
+
+// 3D clouds by Lynx (code cave)
+
 float fbmVL(vec3 position, int k) {
     float result = 0.0;
     float density = 0.5;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < k; i++) {
         result += density * newnoise(position);
         position *= 3.0;
         density *= 0.5;
     }
     return clamp(result, 0.0, 1.0) + 1.0 / tau / float(k);
 }
+
+vec4 VLClouds(vec3 viewDir, vec3 sunDir, vec3 sunColor, float time, float jitter) {
+    float cloudBase = 1.2;
+    float cloudTop = 2.0;
+    int steps = 16;
+    float stepSize = (cloudTop - cloudBase) / float(steps);
+
+    vec3 rayOrigin = vec3(0.0, 0.0, 0.0);
+    vec3 cloudAccum = vec3(0.0, 0.0, 0.0);
+    float alphaAccum = 0.0;
+    float viewLift = smoothstep(0.01, 0.1, viewDir.y);
+
+    for (int i = 0; i < steps; i++) {
+        float height = cloudBase + stepSize * (float(i) + jitter);
+        float t = height / max(viewDir.y, 0.001);
+        vec3 pos = rayOrigin + viewDir * t;
+
+        vec3 noisePos = vec3(pos.xz * 0.9 + time * 0.02, height * 0.8);
+        float base = fbmVL(noisePos, 5);
+
+        float heightNorm = (height - cloudBase) / (cloudTop - cloudBase);
+        float heightFactor = smoothstep(0.2, 0.9, heightNorm) * (1.0 - smoothstep(0.6, 1.0, heightNorm));
+        heightFactor *= smoothstep(0.2, 0.6, base);
+
+        float density = base;
+        density = 2.4 * clamp(density - 0.5, 0.0, 1.0);
+        density = pow(density, 1.8) * heightFactor;
+
+        float alpha = 1.0 - smoothstep(0.2, 0.0, density);
+        alpha *= (1.0 - alphaAccum) * viewLift;
+
+        float scatteringC = smoothstep(0.2, 0.7, heightNorm);
+
+        float scattering = dot(sunDir, viewDir) * 0.5 + 0.5;
+        float forwardScatter = pow(max(scattering, 0.0), 2.0);
+        float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.3;
+        float totalScatter = 0.6 + forwardScatter * 0.8 + backScatter;
+
+        vec3 cloudColor = sunColor * scatteringC * totalScatter;
+        cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;
+
+
+        cloudAccum += cloudColor * alpha;
+        alphaAccum += alpha;
+
+        if (alphaAccum > 0.98 && viewDir.y < 0.9) break;
+    }
+
+    #if !defined(TERRAIN)
+        alphaAccum *= smoothstep(0.0, 0.5, viewDir.y);
+    #endif
+
+    return vec4(cloudAccum, alphaAccum);
+}
+
+// unused stuff
+float fastVoronoi3D(vec3 pos, float f) {
+    vec3 p1 = fract(pos) - 0.5;
+    vec3 p2 = fract(pos.zxy + vec3(0.12, 0.34, 0.56)) - 0.5;
+    
+    float d1 = dot(p1, p1);
+    float d2 = dot(p2, p2);
+    
+    return 1.0 - f * min(d1, d2);
+}
+
+float cloudsNoise3D(vec3 p, float t) {
+    float n = fastVoronoi3D(p + t * 0.1, 1.8);
+    n *= fastVoronoi3D(3.0 * p + t * 0.2, 1.5);
+    n *= fastVoronoi3D(9.0 * p + t * 0.4, 0.4);
+    n *= fastVoronoi3D(27.0 * p + t * 0.8, 0.1);
+    
+    return n * n;
+}
+
+/* Voronoi Cumulus Clouds by Lynx */
 
 // Config for Cumulus Clouds
 #define CLOUD_MIN_HEIGHT 0.3
@@ -160,61 +298,5 @@ vec4 cumulusCloud(vec3 viewDir, float time, float jitter, vec3 sunColor, vec3 sk
 }
 
 
-/* Cirrus clouds by Lynx */ 
-
-float hash12(vec2 p) {
-    const vec3 K = vec3(0.3183099, 0.3678794, 43758.5453);
-    vec3 x = fract(vec3(p.xyx) * K.x + K.y);
-    x += dot(x, x.yzx + 19.19);
-    return fract((x.x + x.y) * x.z);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-
-    float a = hash12(i + vec2(0.0, 0.0));
-    float b = hash12(i + vec2(1.0, 0.0));
-    float c = hash12(i + vec2(0.0, 1.0));
-    float d = hash12(i + vec2(1.0, 1.0));
-
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
-float fbm(vec2 p) {
-    float value = 0.0;
-    float amplitude = .5;
-    float frequency = 1.5;
-
-    for (int i = 0; i < 15; i++) {
-        value += amplitude * noise(p * frequency);
-        frequency *= 2.0;
-        amplitude *= 0.5;
-    }
-    return value;
-}
-
-vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
-    vec2 p = uv * vec2(12.0, 4.0);
-    float flow1 = fbm(p * 0.3) * 2.0;
-    float flow2 = fbm(p * 0.15 + vec2_splat(100.0)) * 1.2;
-    vec2 distorted = p + vec2(flow1 * 2.5, flow1 * 0.4) + vec2(flow2 * 0.8, flow2 * 0.2);
-    float clouds = fbm(distorted * 0.18);
-    clouds += fbm(distorted * 0.4 + vec2_splat(50.0)) * 0.5;
-    clouds += fbm(distorted * 1.2 + vec2_splat(200.0)) * 0.25;
-    clouds /= 1.75;
-    clouds = smoothstep(0.35, 0.75, clouds);
-    float gaps = fbm(p * 0.25 + vec2_splat(300.0));
-    clouds *= smoothstep(0.3, 0.6, gaps);
-    float scattering = dot(sunDir, viewDir) * 0.5 + 0.5;
-    float forwardScatter = pow(max(scattering, 0.0), 2.0);
-    float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.3;
-    float totalScatter = 0.6 + forwardScatter * 0.8 + backScatter;
-    vec3 cloudColor = sunColor * totalScatter;
-    cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;
-    clouds *= 0.85 * smoothstep(0.05, 1.0, viewDir.y);
-    return vec4(cloudColor, clouds);
-}
 
 #endif

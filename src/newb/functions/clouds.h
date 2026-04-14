@@ -1,9 +1,9 @@
 #ifndef CLOUDS_H
 #define CLOUDS_H
 
+#include "detection.h"
 #include "noise.h"
 #include "sky.h"
-#include "detection.h"
 
 // simple clouds 2D noise
 float cloudNoise2D(vec2 p, highp float t, float rain) {
@@ -105,7 +105,7 @@ float cloudsNoiseVr(vec2 p, float t) {
   n *= fastVoronoi2(3.0*p + t, 1.5);
   n *= fastVoronoi2(9.0*p + t, 0.4);
   n *= fastVoronoi2(27.0*p + t, 0.1);
-  //n *= fastVoronoi2(82.0*pos + t, 0.02); // more quality
+  n *= fastVoronoi2(82.0*p + t, 0.02); // more quality
   return n*n;
 }
 
@@ -145,7 +145,6 @@ vec4 renderClouds(vec2 p, float t, float rain, vec3 horizonCol, vec3 zenithCol, 
 // aurora is rendered on clouds layer
 #ifdef NL_AURORA
 vec4 renderAurora(vec3 p, float t, float rain, vec3 FOG_COLOR) {
-  // if (rain > 0.5) return vec4(0.0, 0.0, 0.0, 0.0);
   t *= NL_AURORA_VELOCITY;
   p.xz *= NL_AURORA_SCALE;
   p.xz += 0.05*sin(p.x*4.0 + 20.0*t);
@@ -157,9 +156,31 @@ vec4 renderAurora(vec3 p, float t, float rain, vec3 FOG_COLOR) {
   d2 = d0/(1.0 + d2/NL_AURORA_WIDTH);
 
   float mask = (1.0-0.8*rain)*max(1.0 - 4.0*max(FOG_COLOR.b, FOG_COLOR.g), 0.0);
-  float3 mixedColor = mix(float3(0.1,1.0,0.0), float3(0.1,0.0,1.0), d1);
-return float4(mixedColor.r, mixedColor.g, mixedColor.b, 1.0) * d2 * mask;
+  return vec4(NL_AURORA*mix(NL_AURORA_COL1,NL_AURORA_COL2,d1),1.0)*d2*mask;
 }
 #endif
+
+vec4 nlCloudAuroraReflection(nl_skycolor skycol, nl_environment env, vec3 viewDir, vec3 wPos, vec3 CAMERA_POS, highp float t) {
+  vec2 cloudPos = wPos.xz;
+  cloudPos += (187.0-(wPos.y+CAMERA_POS.y))*viewDir.xz/viewDir.y;
+  float fade = clamp(2.0 - 0.005*length(cloudPos), 0.0, 1.0);
+  cloudPos += CAMERA_POS.xz;
+
+  vec4 refl = vec4_splat(0.0);
+
+  #ifdef NL_AURORA
+    vec4 aurora = renderAurora(cloudPos.xyy, t, env.rainFactor, env.fogCol);
+    aurora.a *= fade;
+    refl = vec4(2.0*aurora.rgb*aurora.a, aurora.a);
+  #endif
+
+  #if NL_CLOUD_TYPE == 1
+    vec4 clouds = renderCloudsSimple(skycol, cloudPos.xyy, t, env.rainFactor);
+    clouds.a *= fade;
+    refl = vec4(mix(refl.rgb, clouds.rgb, clouds.a), min(refl.a + clouds.a, 1.0));
+  #endif
+
+  return refl;
+}
 
 #endif

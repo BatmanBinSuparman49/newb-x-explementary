@@ -205,7 +205,7 @@ void main() {
   bool doCaustics = (camDist < causticDist);
 
   // water 
-  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N);
+  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, day);
 
   // water absorption
   float depth = 1.0 - pow(v_lightmapUV.y,2.0);

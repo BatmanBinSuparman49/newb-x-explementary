@@ -10,8 +10,8 @@ description = '''A Newb variant by BatmanBinSuparman49 enhancing Minecraft's vis
 authors = ["BatmanBinSuparman49", "devendrn"]
 url = "https://devendrn.github.io/newb-shader/"
 uuid = "d35d2d8a-4018-41f1-b0e0-a4e96697857b" # Use https://www.uuidgenerator.net/version4
-materials = ["Actor", "Sky", "RenderChunk", "EndSky", "Clouds", "SunMoon", "Weather", "ItemInHandTextured", "ItemInHandColor", "ItemInHandColorGlint", "Stars"]
-
+# materials = ["Actor", "Sky", "RenderChunk", "EndSky", "Clouds", "SunMoon", "Weather", "ItemInHandTextured", "ItemInHandColor", "ItemInHandColorGlint", "Stars"]
+materials = ["Sky"]
 [info] 
 copyright = '''
 Copyright © 2025 %a, and "Newb Shader" Contributors

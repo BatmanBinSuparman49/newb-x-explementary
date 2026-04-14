@@ -10,6 +10,7 @@
 #include "newb/functions/clouds.h"
 #include "firmament.h"
 #include "atmosphere.h"
+#include "cloud.h"
 
 #define NL_CLOUD_PARAMS(x) NL_CLOUD2##x##STEPS, NL_CLOUD2##x##THICKNESS, NL_CLOUD2##x##RAIN_THICKNESS, NL_CLOUD2##x##VELOCITY, NL_CLOUD2##x##SCALE, NL_CLOUD2##x##DENSITY, NL_CLOUD2##x##SHAPE
 
@@ -30,7 +31,7 @@ float randW(vec2 co)
  return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-float noise(vec2 p)
+float noiseW(vec2 p)
 {
     vec2 ip = floor(p);
     vec2 fp = fract(p);
@@ -49,8 +50,9 @@ highp float getWave(highp vec2 uv, float time){
     uv *= 1.5;
     uv = mul(uv, rotMat(80.0));
 
-    float A = sin(noise(t+uv-sin(uv.y*0.2)+uv.x)) * 0.5;
-    float B = cos(noise(-t+uv+cos(uv.y*0.2)+uv.x)) * 0.5;
+    float A = sin(noiseW(t+uv-sin(uv.y*0.2)+uv.x)) * 0.5;
+    float B = cos(noiseW(-t+uv+cos(uv.y*0.2)+uv.x)) * 0.5;
+    float C = sin(noiseW(uv * 3.0 + t * 0.6)) * 0.5;
     return saturate(A + B);
 }
 
@@ -64,7 +66,7 @@ float ranD( vec2 p){
  return fract(cos(p.x +p.y * 13.0) * 335.552);
 }
 
-float snoise(  vec2 p) {
+float snoise(vec2 p) {
    vec2 i = floor(p);
    vec2 f = fract(p);
    vec2 u = pow(f,vec2(2.0, 2.0))*(2. - 1.*f);
@@ -114,7 +116,7 @@ vec4 applyWaterEffect(
     vec4 diffuse, vec4 reflectionColor, 
     nl_skycolor skycol, nl_environment  env, vec3 FogColor,
     float time, float night, float dusk, float dawn, float rain, float nolight,
-    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N
+    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N, float day
 ) {
     if (!water) return diffuse;
 
@@ -130,12 +132,23 @@ vec4 applyWaterEffect(
     vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
     vec3 specular = brdf(L, V, 0.22, normal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
 
+    // Sun & Moon 
+    float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
+    vec3 moonPos = vec3(cos(sunA), sin(sunA), 0.7);
+    vec3 SunMoonDir = mix(normalize(sunDir), -moonPos, night);
+
+    vec3 sun = sunS(normalize(sunDir), normalize(reflDir), dusk, dawn);
+    sun *= (1.0-night);
+
+    vec3 moon = getMoon(normalize(-moonPos), normalize(reflDir), night);
+    moon *= night;
+
+    // Clouds & Aurora
     vec2 cloudPos = 3.0 * reflDir.xz / max(reflDir.y, 0.05);
     vec3 roundPos;
     roundPos.xz = 48.0 * reflDir.xz/max(reflDir.y, 0.05);
     roundPos.y = 1.0;
     
-    vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, reflDir, env, time, vec3(0.0,0.0,0.0), 0.0);
     vec4 clouds = renderClouds(cloudPos, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,
                                NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
 
@@ -143,14 +156,13 @@ vec4 applyWaterEffect(
     vec4 v_color2 = vec4(skycol.horizonEdge, time);
     vec4 roundedC = renderCloudsRounded(reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
-    vec3 sun = sunS(normalize(sunDir), normalize(reflDir), dusk, dawn, night);
-    sun *= (1.0-night);
+    vec2 uvC = reflDir.xz/reflDir.y;
+    vec3 cirrusCol = vec3(1.0, 0.8, 0.75)*day + vec3(1.0, 0.35, 0.05)*saturate(dawn+dusk) + vec3(0.5765, 0.584, 0.98)*night;
+    vec4 Cirrus = cirrus(uvC, cirrusCol, SunMoonDir, reflDir);
 
-    float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
-    vec3 moonPos = vec3(cos(sunA), sin(sunA), 0.7);
-    vec3 moon = getMoon(normalize(-moonPos), normalize(reflDir), night);
-    moon *= night;
+    vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, reflDir, env, time, vec3(0.0,0.0,0.0), 0.0);
 
+    // Stars
     vec3 stars = vec3(0.0, 0.0, 0.0);
 
     #ifdef FALLING_STARS
@@ -172,16 +184,18 @@ vec4 applyWaterEffect(
     float fresnel = calculateFresnel(NdotV, 1.2);
     float blend = mix(0.04, 1.0, fresnel);
 
-    vec3 skyReflection = getSkyRefl(skycol, env, reflDir, FogColor.rgb, time);
+    vec3 skyReflection = getAtmosphere(normalize(reflDir), normalize(sunDir), SunMoonDir, day, night, dusk, dawn, 0.0);
     diffuse.rgb = mix(diffuse.rgb, skyReflection, 1.0);
-
 
     reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, blend);
     vec3 reflections;
     #if NL_CLOUD_TYPE == 2
         reflections = mix(diffuse.rgb, roundedC.rgb * 0.4, 0.688 * roundedC.a * (1.0 - nolight));
     #else 
-        reflections = mix(diffuse.rgb, clouds.rgb * 0.4, 0.688 * clouds.a * (1.0 - nolight));
+        //reflections = mix(diffuse.rgb, clouds.rgb * 0.4, 0.688 * clouds.a * (1.0 - nolight));
+        reflections = mix(diffuse.rgb, Cirrus.rgb * mix(1.0, 0.6, night), 0.588 * Cirrus.a * (1.0 - nolight));
+
+        // reflections = diffuse.rgb;
     #endif
     
     reflections += stars;

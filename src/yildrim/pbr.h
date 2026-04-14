@@ -13,7 +13,7 @@ mat3 getTBN(vec3 normal) {
 
     return transpose(mat3(T, B, N));
 }
- //based on Grey's normal mapping 
+
 float luminance601(vec3 color) {
   return color.r*0.299 + color.g*0.587 + color.b*0.114;
 }

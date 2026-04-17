@@ -116,7 +116,7 @@ vec4 applyWaterEffect(
     vec4 diffuse, vec4 reflectionColor, 
     nl_skycolor skycol, nl_environment  env, vec3 FogColor,
     float time, float night, float dusk, float dawn, float rain, float nolight,
-    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N, float day
+    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N, float day, sampler2D NOISE_0
 ) {
     if (!water) return diffuse;
 
@@ -184,7 +184,7 @@ vec4 applyWaterEffect(
     float fresnel = calculateFresnel(NdotV, 1.2);
     float blend = mix(0.04, 1.0, fresnel);
 
-    vec3 skyReflection = getAtmosphere(normalize(reflDir), normalize(sunDir), SunMoonDir, day, night, dusk, dawn, 0.0);
+    vec3 skyReflection = getAtmosphere(NOISE_0, normalize(reflDir), normalize(sunDir), SunMoonDir, day, night, dusk, dawn, 0.0);
     diffuse.rgb = mix(diffuse.rgb, skyReflection, 1.0);
 
     reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, blend);

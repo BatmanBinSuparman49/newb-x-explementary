@@ -67,6 +67,10 @@ float getMie(vec3 p, vec3 lp) {
     return exp(-d * 5.0) * 2.0; 
 }
 
+float getMieBSBE(vec3 pos, vec3 lightPos){
+    return exp(-distance(pos, lightPos) * 2.0) * exp(-saturate(pos.y) * 4.0);
+} 
+
 float hash13S(highp vec3 p) {
     p = fract(p * 0.1031);
     p += dot(p, p.zyx + 31.32);
@@ -76,11 +80,6 @@ float hash13S(highp vec3 p) {
 float getStars(highp vec3 pos) {
     pos = floor((abs(pos) + 16.0) * 265.0);
     return smoothstep(0.998, 1.0, hash13S(pos));
-}
-
-float particleThickness(float depth) {
-    depth = max(depth + 0.8, 0.01);
-    return 1.0 / depth;
 }
 
 vec3 calcAbsorption(vec3 x, float y) {
@@ -162,7 +161,7 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
 
     vec2 uvC = V.xz/V.y;
     vec3 cirrusCol = vec3(1.0, 0.8, 0.75)*dayFactor + vec3(1.0, 0.35, 0.05)*saturate(dawn+dusk) + vec3(0.5765, 0.584, 0.98)*nightFactor;
-    vec4 Cirrus = cirrus(NOISE_0, uvC, cirrusCol, SunMoonDir, V) * cirrusFactor;
+    vec4 Cirrus = cirrus(uvC, cirrusCol, SunMoonDir, V) * cirrusFactor;
 
     vec3 atmosphere = mix(nSky, dSky, scatter);
     atmosphere = mix(atmosphere, Cirrus.rgb*mix(1.5, 1.0, nightFactor), Cirrus.a);

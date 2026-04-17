@@ -135,7 +135,7 @@ void main() {
   vec3 V = normalize(-viewDir);
   vec3 N = normalize(cross(dFdx(v_position), dFdy(v_position)));
   vec3 sunDir = normalize(SunDirection.xyz);
-  vec3 moonDir = mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk));
+  vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * night * (1.0-dawn) * (1.0-dusk);
   
   vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));

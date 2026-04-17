@@ -155,7 +155,7 @@ vec4 applyWaterEffect(
     vec3 sun = getSun(sunDir, reflDir, night, dusk, dawn);
     sun *= (1.0-night);
     // sun *= getMie(sunDir, reflDir) * 4.0;
-    vec3 moon = getMoon(mix(sunDir, normalize(vec3(-0.6, 0.45, -0.7)), night * (1.0 - dawn) * (1.0 - dusk)), reflDir, night);
+    vec3 moon = getMoon(normalize(vec3(-0.6, 0.45, -0.7))*night*(1.0 - dawn) * (1.0 - dusk), reflDir, night);
 
     vec3 stars = vec3(0.0, 0.0, 0.0);
 

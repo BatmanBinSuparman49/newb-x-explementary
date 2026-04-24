@@ -161,7 +161,7 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
 
     vec2 uvC = V.xz/V.y;
     vec3 cirrusCol = vec3(1.0, 0.8, 0.75)*dayFactor + vec3(1.0, 0.35, 0.05)*saturate(dawn+dusk) + vec3(0.5765, 0.584, 0.98)*nightFactor;
-    vec4 Cirrus = cirrus(uvC, cirrusCol, SunMoonDir, V) * cirrusFactor;
+    vec4 Cirrus = cirrus(NOISE_0, uvC, cirrusCol, SunMoonDir, V) * cirrusFactor;
 
     vec3 atmosphere = mix(nSky, dSky, scatter);
     atmosphere = mix(atmosphere, Cirrus.rgb*mix(1.5, 1.0, nightFactor), Cirrus.a);
@@ -180,6 +180,56 @@ vec3 getAtmosphere(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float day
     sky = 1.0 - exp(-1.2 * sky);
     return sky;
 }
+
+
+vec3 GetSkyVertex(vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor, float nightFactor, float dusk, float dawn, float cirrusFactor) {
+    vec3 dSky = day(V, L) * 3.0;
+    vec3 nSky = night(V, L) * 0.5;
+
+    float a = dayFactor;
+    float b = nightFactor;
+    float depthView  = max(V.y, 0.0);
+    float depthLight = max(L.y * 0.5 + 0.02, 0.01); 
+    float VoL = distance(V, L);
+
+    float coeff   = mix(mix(1.0, 0.05, a), 3.0, b); 
+    float scatter = exp(-VoL * coeff);
+    scatter       = mix(scatter, 0.0, b);
+
+    vec3 abso    = calcAbsorption(mix(nSky, dSky, scatter), depthView);
+    vec3 absoSun = calcAbsorption(mix(nSky, dSky, scatter), depthLight);
+
+    float sunsetFactor = saturate(L.y * 2.5); 
+    float transition = pow(sunsetFactor, 2.0); 
+    
+    vec3 sunRed = vec3(4.0, 0.3, 0.02);
+    vec3 sunDay = vec3(3.2, 2.8, 2.2); 
+    vec3 currentSunCol = mix(sunRed, sunDay, transition);
+
+    vec3 sun = sunS(L, V, dusk, dawn) * currentSunCol * absoSun;
+    sun *= exp(min(V.y, 0.0) * 100.0);
+
+    vec3 mie = getMie(V, L) * currentSunCol * 0.5 * absoSun;
+    mie *= exp(min(V.y, 0.0) * 50.0);
+
+    float stars = mix(getStars(V), 0.0, a);
+
+    a += saturate(dawn+dusk);
+    sun *= a;
+    mie *= a;
+
+    vec3 atmosphere = mix(nSky, dSky, scatter);
+    atmosphere += mie;
+
+    return atmosphere;
+}
+
+vec3 getAtmosphereVertex(vec3 V, vec3 L, vec3 SunMoonDir, float day, float night, float dusk, float dawn, float cirrusFactor) {
+    vec3 sky = GetSkyVertex(V, L, SunMoonDir, day, night, dusk, dawn, cirrusFactor) * BRIGHTNESS;
+    sky = 1.0 - exp(-1.2 * sky);
+    return sky;
+}
+
 
 /* Tyro's physically based Atmospheric Scattering | not used */
 // Flaws - i) Sky below horizon is black 

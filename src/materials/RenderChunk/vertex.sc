@@ -7,15 +7,17 @@ $output v_color0, v_color1, v_fog, v_refl, v_texcoord0, v_lightmapUV, v_extra, v
 #include <bgfx_shader.sh>
 #include <newb/main.sh>
 
+#include <yildrim/atmosphere.h>
+#include <yildrim/cloud.h>
+
 uniform vec4 RenderChunkFogAlpha;
 uniform vec4 FogAndDistanceControl;
 uniform vec4 ViewPositionAndTime;
 uniform vec4 FogColor;
 uniform vec4 CameraPosition;
 uniform vec4 TimeOfDay;
+uniform vec4 SunDirection;
 
-// old lightmap fix 
-// #define a_texcoord1 vec2(fract(a_texcoord1.x*15.9375),floor(a_texcoord1.x*15.9375)*0.0625)
 
 void main() {
   #ifdef INSTANCING
@@ -114,8 +116,15 @@ void main() {
   // loading chunks
   relativeDist += RenderChunkFogAlpha.x;
 
+  vec3 sunDir = normalize(SunDirection.xyz);
+  float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
+  vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
+  vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
+
   vec4 fogColor;
-  fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
+  // fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
+
+  fogColor.rgb = getAtmosphereVertex(viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 0.0);
   fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogAndDistanceControl.xy);
   #ifdef NL_GODRAY
     fogColor.a = mix(fogColor.a, 1.0, NL_GODRAY*nlRenderGodRayIntensity(cPos, worldPos, t, uv1, relativeDist, FogColor.rgb));

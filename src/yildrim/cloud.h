@@ -72,21 +72,8 @@ float fbm(vec2 p) {
     return value;
 }
 
-/*
-float fbm(vec2 p, sampler2D fbmtex) {
-    float value = 0.0;
-    float amplitude = .5;
-    float frequency = 1.5;
 
-    for (int i = 0; i < 15; i++) {
-        value += amplitude * texture2D(fbmtex, p * frequency).r;
-        frequency *= 2.0;
-        amplitude *= 0.5;
-    }
-    return value;
-} */
-
-vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
+/* vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
     vec2 p = uv * vec2(12.0, 4.0);
     float flow1 = fbm(p * 0.3) * 2.0;
     float flow2 = fbm(p * 0.15 + vec2_splat(100.0)) * 1.2;
@@ -106,17 +93,17 @@ vec4 cirrus(vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
     cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;
     clouds *= 0.85 * smoothstep(0.05, 1.0, viewDir.y);
     return vec4(cloudColor, clouds);
-}
+} */
 
-/* 
+
 vec4 cirrus(sampler2D NOISE_0, vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
-    vec2 p = uv * vec2(12.0, 4.0)*0.05;
+    vec2 p = uv * vec2(12.0, 5.0)*0.08;
 
-    vec3 cirrusNoise = texture2D(NOISE_0, p).rgb;
-    vec2 distorted = p + (cirrusNoise.b * 0.4) + (cirrusNoise.b * 0.1);
+    vec3 cirrusNoise = texture2D(NOISE_0, p).rrr;
+    vec2 distorted = p + (cirrusNoise.r * 0.3) + (cirrusNoise.r * 0.1);
     vec3 distortedNoise = texture2D(NOISE_0, distorted).rgb;
 
-    float clouds = (distortedNoise.r + distortedNoise.g * 0.5) / 1.5;
+    float clouds = (distortedNoise.r + distortedNoise.g*0.1) / 1.7;
     clouds += fbm(distorted * 0.4 + vec2_splat(50.0)) * 0.5;
     clouds += fbm(distorted * 1.2 + vec2_splat(200.0)) * 0.25;
     clouds /= 1.75;
@@ -132,7 +119,8 @@ vec4 cirrus(sampler2D NOISE_0, vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir
     cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;
     clouds *= 0.85 * smoothstep(0.05, 1.0, viewDir.y);
     return vec4(cloudColor, clouds);
-} */
+} 
+
  /* vec4 cirrus(sampler2D NOISE_0, vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
     vec2 p = uv * vec2(12.0, 4.0);
     float flow1 = fbm(p * 0.3, NOISE_0) * 2.0;

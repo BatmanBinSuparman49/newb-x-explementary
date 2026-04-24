@@ -9,7 +9,7 @@
   "default_texture": "",
   "unordered_access": false,
   "always_one": 1,
-  "texture_path": "textures/noise/cirrusnoise256.png",
+  "texture_path": "textures/noise/cirrustex.png",
    "sampler_state": {
     "filter": "Bilinear",
     "wrapping": "Repeat"

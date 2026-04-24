@@ -14,18 +14,10 @@
 
 #define NL_CLOUD_PARAMS(x) NL_CLOUD2##x##STEPS, NL_CLOUD2##x##THICKNESS, NL_CLOUD2##x##RAIN_THICKNESS, NL_CLOUD2##x##VELOCITY, NL_CLOUD2##x##SCALE, NL_CLOUD2##x##DENSITY, NL_CLOUD2##x##SHAPE
 
-
-float booltofloat(bool factor){
-return float(factor);
-}
-float fogtime(vec4 fogcol) {
-    //三次多项式拟合，四次多项式拟合曲线存在明显突出故不使用
-    // return fogcol.g > 0.213101 ? 1.0 : (((349.305545 * fogcol.g - 159.858192) * fogcol.g + 30.557216) * fogcol.g - 1.628452);
-    return clamp(((349.305545 * fogcol.g - 159.858192) * fogcol.g + 30.557216) * fogcol.g - 1.628452, -1.0, 1.0);
-}
 mat2 rotMat(float a){
  return mat2(cos(a), sin(a), -sin(a), cos(a));
 }
+
 float randW(vec2 co)
 {
  return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -116,7 +108,7 @@ vec4 applyWaterEffect(
     vec4 diffuse, vec4 reflectionColor, 
     nl_skycolor skycol, nl_environment  env, vec3 FogColor,
     float time, float night, float dusk, float dawn, float rain, float nolight,
-    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N, float day, sampler2D NOISE_0
+    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N, float day, sampler2D cirrusTex
 ) {
     if (!water) return diffuse;
 
@@ -158,7 +150,7 @@ vec4 applyWaterEffect(
 
     vec2 uvC = reflDir.xz/reflDir.y;
     vec3 cirrusCol = vec3(1.0, 0.8, 0.75)*day + vec3(1.0, 0.35, 0.05)*saturate(dawn+dusk) + vec3(0.5765, 0.584, 0.98)*night;
-    vec4 Cirrus = cirrus(uvC, cirrusCol, SunMoonDir, reflDir);
+    vec4 Cirrus = cirrus(cirrusTex, uvC, cirrusCol, SunMoonDir, reflDir);
 
     vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, reflDir, env, time, vec3(0.0,0.0,0.0), 0.0);
 
@@ -184,18 +176,16 @@ vec4 applyWaterEffect(
     float fresnel = calculateFresnel(NdotV, 1.2);
     float blend = mix(0.04, 1.0, fresnel);
 
-    vec3 skyReflection = getAtmosphere(NOISE_0, normalize(reflDir), normalize(sunDir), SunMoonDir, day, night, dusk, dawn, 0.0);
+    vec3 skyReflection = getAtmosphere(cirrusTex, normalize(reflDir), normalize(sunDir), SunMoonDir, day, night, dusk, dawn, 0.0);
     diffuse.rgb = mix(diffuse.rgb, skyReflection, 1.0);
 
-    reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, blend);
+    reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, fresnel);
     vec3 reflections;
     #if NL_CLOUD_TYPE == 2
         reflections = mix(diffuse.rgb, roundedC.rgb * 0.4, 0.688 * roundedC.a * (1.0 - nolight));
     #else 
         //reflections = mix(diffuse.rgb, clouds.rgb * 0.4, 0.688 * clouds.a * (1.0 - nolight));
         reflections = mix(diffuse.rgb, Cirrus.rgb * mix(1.0, 0.6, night), 0.588 * Cirrus.a * (1.0 - nolight));
-
-        // reflections = diffuse.rgb;
     #endif
     
     reflections += stars;
@@ -204,7 +194,6 @@ vec4 applyWaterEffect(
     float brightness = pow(clamp(luma * 1.8, 0.0, 1.0), mix(1.0, 2.5, 1.0 - FogColor.b));
 
     bool flatWater = v_wpos.y < 0.0;
-    // bool flatWater = water;
 
     if (!env.end && flatWater) {
         diffuse.rgb = reflections * fresnel;
@@ -216,8 +205,8 @@ vec4 applyWaterEffect(
         }
     }
     if(!env.end && !env.nether){
-        diffuse.rgb += sun;
-        diffuse.rgb += moon;
+        diffuse.rgb += sun*(1.0-nolight);
+        diffuse.rgb += moon*(1.0-nolight);
     }
     return diffuse;
 }

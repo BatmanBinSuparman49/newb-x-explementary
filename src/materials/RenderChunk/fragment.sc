@@ -7,6 +7,7 @@ $input v_color0, v_color1, v_fog, v_refl, v_texcoord0, v_lightmapUV, v_extra, v_
 #include <yildrim/puddles.h>
 #include <yildrim/waters.h>
 #include <yildrim/firmament.h>
+#include <yildrim/atmosphere.h>
 
 SAMPLER2D_AUTOREG(s_MatTexture);
 SAMPLER2D_AUTOREG(s_SeasonsTexture);
@@ -270,8 +271,15 @@ void main() {
   
   vec3 p = normalize(v_wpos.xyz); 
 
-  // firmaments declarations for using in reflections  
-  vec3 skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
+  // firmaments declarations for using in reflections
+
+  vec3 skyReflection = vec3(0.0, 0.0, 0.0);
+  if(!env.end && !env.nether){
+    skyReflection = getAtmosphereVertex(viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 1.0);
+  } else {
+    skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
+  }
+  
   vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
@@ -297,28 +305,6 @@ void main() {
       diffuse.rgb += specHighlights;
     } 
 
-
-  /* float n1 = worley2(realPos.xz * 0.3).y - worley2(realPos.xz * 0.3 ).x;
-  float n2 = worley2(realPos.xz * 0.02).y - worley2(realPos.xz * 0.02 ).x;
-  float puddleNoise = mix(n1, n2, 0.25);
-  float puddleMask  = smoothstep(0.35, 0.45, puddleNoise);
-  puddleMask        = pow(puddleMask, 0.46);
-  vec3 puddleSpec = brdf(SunMoonDir, V, 0.1, worldNormal, diffuse.rgb, 0.0, F0, vec3(0.05, 0.05, 0.05)*(1.0+night));
-  float wetness = puddleMask * rain;
-  puddleSpec *= wetness;
-  vec3 puddleRefl = skyReflection * 1.2;
-  float reflStrength = wetness * fresnel;
-  if(v_extra.b < 0.9 && !blockUnderWater && !env.nether && !env.end && !env.underwater){
-    vec3 puddleBase = diffuse.rgb * mix(1.0, 0.4, wetness);
-    vec3 puddleColor = mix(puddleBase, puddleRefl, reflStrength);
-    diffuse.rgb = puddleColor;
-    diffuse.rgb *= upwards;
-    puddleSpec    *= mix(1.0, 3.0, wetness);
-    puddleSpec    *= (1.0-sideshadow);
-    puddleSpec    *= (1.0-shadow);
-    diffuse.rgb += puddleSpec;
-  } */
-
   float downwards = max(-N.y, 0.0);
   float notBottom = 1.0 - downwards;
 
@@ -343,10 +329,10 @@ void main() {
     #endif
   }
    
-  vec3 reflection = skyReflection*0.8;
-  if(!env.end && !env.nether){
-    reflection = mix(skyReflection*0.8, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
-  }
+  vec3 reflection = skyReflection*0.85;
+  /* if(!env.end && !env.nether){
+      // reflection = mix(skyReflection*0.8, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
+  } */
 
   vec3 endstars = vec3(0.0, 0.0, 0.0);
   if(env.end){

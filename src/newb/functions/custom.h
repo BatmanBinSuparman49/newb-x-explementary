@@ -8,18 +8,19 @@
 
 #define NL_CLOUD_PARAMS(x) NL_CLOUD2##x##STEPS, NL_CLOUD2##x##THICKNESS, NL_CLOUD2##x##RAIN_THICKNESS, NL_CLOUD2##x##VELOCITY, NL_CLOUD2##x##SCALE, NL_CLOUD2##x##DENSITY, NL_CLOUD2##x##SHAPE
 
-
-float booltofloat(bool factor){
-return float(factor);
-}
 float fogtime(vec4 fogcol) {
     //三次多项式拟合，四次多项式拟合曲线存在明显突出故不使用
     // return fogcol.g > 0.213101 ? 1.0 : (((349.305545 * fogcol.g - 159.858192) * fogcol.g + 30.557216) * fogcol.g - 1.628452);
     return clamp(((349.305545 * fogcol.g - 159.858192) * fogcol.g + 30.557216) * fogcol.g - 1.628452, -1.0, 1.0);
 }
+
+// 2D Rotation Matrix function
 mat2 rotMat(float a){
  return mat2(cos(a), sin(a), -sin(a), cos(a));
 }
+
+
+// Water Noise & Wave Starts from this Random Function
 float randW(vec2 co)
 {
  return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -46,57 +47,18 @@ highp float getWave(highp vec2 uv, float time){
     uv *= 1.5;
     uv = mul(uv, rotMat(80.0));
 
-    float A = sin(noise(t+mod(uv,tiles)-sin(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
-    float B = cos(noise(-t+mod(uv,tiles)+cos(mod(uv,tiles).y*0.2)+mod(uv,tiles).x)) * 0.5;
+    float A = sin(noise(t+uv-sin(uv.y*0.2)+uv.x)) * 0.5;
+    float B = cos(noise(-t+uv+cos(uv.y*0.2)+uv.x)) * 0.5;
     return saturate(A + B);
 }
-
-float DistributionGGX(float NoH, float rough){
-    float denom = (NoH * rough - NoH) * NoH + 1.0;
-    return rough / (PI * pow(denom, 2.0));
-}
-
-// Another water wave function from code cave 
-float ranD( vec2 p){
- return fract(cos(p.x +p.y * 13.0) * 335.552);
-}
-
-float snoise(  vec2 p) {
-   vec2 i = floor(p);
-   vec2 f = fract(p);
-   vec2 u = pow(f,vec2(2.0, 2.0))*(2. - 1.*f);
-
-   return mix(mix(ranD(i+vec2(0.,0.)), ranD(i+vec2(1.,0.)), u.x), mix(ranD(i+vec2(0.,1.)), ranD(i+vec2(1.,1.)), u.x), u.y);
-}
-
-float Wave(vec2 p, float t){
-  vec2 p1 = p + vec2(-t*0.9,t*0.2)*0.5;
-  p = p - vec2(-t*0.9,t*0.2)*0.1;
-  float w1 = snoise(vec2(p1.x*6.0,p1.y*1.5));
-  float w2 = sin(snoise(vec2(p.x*3.0+p.y,p.y)));
-  return clamp(1.5-(w1*(1.0-w2)+0.5),0.0,1.0);
-}
-
-// code cave water wave function ends 
 
 float getWaterHeight(vec2 uv, float time) {
     return 0.03*getWave(uv,time); // your wave function or brightness of your texture (tex.r + tex.g + tex.b)/3.0
     // return 0.05*Wave(uv, time);
 }
 
-vec4 getWaterNormalMapFromHeight(vec2 uv, vec2 resolution, float scale, float time) {
-  vec2 step = 1.0 / resolution;
+// Water Noise & Wave Ends
 
-  float height = getWaterHeight(uv,time);
-
-  vec2 dxy = height - vec2(
-      getWaterHeight(uv + vec2(step.x, 0.0), time),
-      getWaterHeight(uv + vec2(0.0, step.y), time)
-  );
-  return vec4(normalize(vec3(dxy * scale / step, 1.0)), height); 
-}
-
-// another normal map function from code cave
 vec3 getWaterNormal(vec2 uv, float t) {
     float eps = 0.005;
     float h  = getWaterHeight(uv, t);
@@ -123,15 +85,17 @@ vec4 applyWaterEffect(
     vec4 diffuse, vec4 reflectionColor, 
     nl_skycolor skycol, nl_environment  env, vec3 FogColor,
     float time, float night, float dusk, float dawn, float rain, float nolight,
-    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir
+    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N, vec2 CameraPosition
 ) {
     if (!water) return diffuse;
 
     float endDist = FogAndDistanceControl*0.8;
     bool doEffect = (camDist < endDist);
 
-    // vec3 normal = getWaterNormalMapFromHeight(v_pos.xz, vec2(16.0, 16.0), 0.5, time).xzy;
-    vec3 normal = getWaterNormal(v_pos.xz, time).xzy;
+    vec3 wnormal = getWaterNormal(v_pos.xz, time).xyz;
+    mat3 TBN = getTBN(N);
+    vec3 normal = mul(wnormal, TBN);
+
     vec3 reflDir = reflect(viewDir, normal);
 
     float glossstrength = 0.5;
@@ -140,8 +104,9 @@ vec4 applyWaterEffect(
     vec3 specular = brdf(L, V, 0.22, normal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
 
     vec2 cloudPos = 3.0 * reflDir.xz / max(reflDir.y, 0.05);
+
     vec3 roundPos;
-    roundPos.xz = 48.0 * reflDir.xz/max(reflDir.y, 0.05);
+    roundPos.xz = 56.0 * reflDir.xz/max(reflDir.y, 0.05);
     roundPos.y = 1.0;
     
     vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, reflDir, env, time, vec3(0.0,0.0,0.0), 0.0);
@@ -152,10 +117,12 @@ vec4 applyWaterEffect(
     vec4 v_color2 = vec4(skycol.horizonEdge, time);
     vec4 roundedC = renderCloudsRounded(reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
-    vec3 sun = getSun(sunDir, reflDir, night, dusk, dawn);
+    vec3 sun = sunS(sunDir, reflDir, dusk, dawn);
+    sun *= exp(min(reflDir.y, 0.0) * 100.0);
     sun *= (1.0-night);
-    // sun *= getMie(sunDir, reflDir) * 4.0;
-    vec3 moon = getMoon(normalize(vec3(-0.6, 0.45, -0.7))*night*(1.0 - dawn) * (1.0 - dusk), reflDir, night);
+
+    vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7))*smoothstep(0.0, 0.7, night);
+    vec3 moon = getMoon(moonDir, reflDir, night);
 
     vec3 stars = vec3(0.0, 0.0, 0.0);
 
@@ -163,7 +130,7 @@ vec4 applyWaterEffect(
     if(!env.underwater) {
         vec2 starUV = reflDir.xz / (0.5 + reflDir.y);
         float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, time);
-        float starFactor = smoothstep(0.5, 1.0, night)*(1.0-rain);
+        float starFactor = smoothstep(0.67, 1.0, night)*(1.0-rain);
         stars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
         stars *= starFactor;
     }
@@ -196,14 +163,13 @@ vec4 applyWaterEffect(
     float brightness = pow(clamp(luma * 1.8, 0.0, 1.0), mix(1.0, 2.5, 1.0 - FogColor.b));
 
     bool flatWater = v_wpos.y < 0.0;
-    // bool flatWater = water;
 
     if (!env.end && flatWater) {
         diffuse.rgb = reflections * fresnel;
         diffuse.a = mix(diffuse.a * 0.75, 1.0, pow(1.0 - NdotV, 2.0));
         if(doEffect){
             #ifdef LYNX_AURORA
-                    diffuse.rgb += aurora.rgb * aurora.a * smoothstep(0.5, 1.0, night) * (1.0-rain);
+                    diffuse.rgb += aurora.rgb * aurora.a * smoothstep(0.67, 1.0, night) * (1.0-rain);
             #endif
         }
     }

@@ -91,6 +91,17 @@ vec3 getSun(vec3 sunDir, vec3 viewDir, float night, float dusk, float dawn){
     return sunCol * sun;
 }
 
+vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn) {
+  float sunDot = max(0.0, 1.0 - dot(sunDir, viewDir));
+  float m = 0.009 / (0.0001 + sunDot);
+  m = pow(m, 1.6) * 0.1;
+  vec3 sunCol = vec3(1.2, 0.95, 0.72);
+  vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
+  sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
+
+  return sunCol * m;
+}
+
 vec3 getMoon(vec3 moonDir, vec3 viewDir, float night){
     float moonDot = saturate(dot(moonDir, viewDir));
     float core =   pow(smoothstep(0.998, 1.0, moonDot), 0.22);
@@ -357,16 +368,17 @@ vec2 tri2(vec2 p) {
     float ty = tri(p.y);
     return vec2(tx + ty, tri(p.y + tx));
 }
+
 float triNoise2d(in vec2 p, float spd,float time)
 {
-    float z=1.9;
-    float z2=1.1;
+    float z=1.8;
+    float z2=2.5;
     float rz = 0.;
       p = mul(mm2(p.x * 0.06), p);
     vec2 bp = p;
     for (int i=0; i<3; i++ )
     {
-        vec2 dg = tri2(bp*1.85)*.79;
+        vec2 dg = tri2(bp*1.85)*.75;
         dg = mul(mm2(time*spd), dg);
         p -= dg/z2;
 
@@ -378,8 +390,9 @@ float triNoise2d(in vec2 p, float spd,float time)
         rz += tri(p.x+tri(p.y))*z;
         p = mul(-m2, p);
     }
-    return clamp(1./pow(rz*29., 1.3),0.,.55);
+    return clamp(1.0/pow(rz*29.0, 1.3), 0.0, 0.55);
 }
+
 vec4 rdAurora(vec3 ro, vec3 rd, nl_environment env, float time, vec3 FOG_COLOR, float rain) {
     vec4 col = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 avgCol = vec4(0.0, 0.0, 0.0, 0.0);

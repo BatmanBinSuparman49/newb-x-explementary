@@ -135,7 +135,7 @@ void main() {
   vec3 V = normalize(-viewDir);
   vec3 N = normalize(cross(dFdx(v_position), dFdy(v_position)));
   vec3 sunDir = normalize(SunDirection.xyz);
-  vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * night * (1.0-dawn) * (1.0-dusk);
+  vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * smoothstep(0.0, 0.7, night*night);
   
   vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
@@ -219,7 +219,7 @@ void main() {
     }
   }
   // water 
-  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir);
+  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, CameraPosition.xz);
 
   // water absorption
   float depth = 1.0 - pow(v_lightmapUV.y,2.0);
@@ -239,18 +239,17 @@ void main() {
     diffuse.a *= 0.4 + (visibility * 0.5);
   }
 
-  float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
   vec3 dawnCol = vec3(1.0, 0.52, 0.278);
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 
   vec3 dayCol  = vec3_splat(1.0);
   float twilight = saturate(dusk + dawn);
-  sunDir *= (1.0-night);
-  vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*night; 
+  vec3 SunMoonDir = mix(sunDir, moonDir, smoothstep(0.0, 0.8, night*night));
+  vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*smoothstep(0.0, 0.7, night); 
 
   float glossstrength = 0.5;
   vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
 
-  vec3 specular = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
+  vec3 specular = brdf(normalize(SunMoonDir), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
   float fresnel = pow(1.0 - dot(V, worldNormal), 3.0); 
   viewDir = reflect(viewDir, worldNormal);
   
@@ -261,52 +260,27 @@ void main() {
 
   // firmaments declarations for using in reflections  
   vec3 skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
+
   vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain1, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
+
+  vec3 roundPos;
+  roundPos.xz = 56.0 * viewDir.xz/max(viewDir.y, 0.05);
+  roundPos.y = 1.0;
+  vec4 roundedC = renderCloudsRounded(viewDir, roundPos, rain, ViewPositionAndTime.w, skycol.horizonEdge, skycol.zenith, NL_CLOUD_PARAMS(_));
+
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
   // specular highlights 
   float specDist = FogAndDistanceControl.z*0.67;
     if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && !blockUnderWater && isLeaf==0.0){
-      vec3 specHighlights = brdf_specular(normalize(mix(sunDir, moonDir, moonFactor)), V, worldNormal, 0.65, F0, specularCol);
+      vec3 specHighlights = brdf_specular(normalize(SunMoonDir), V, worldNormal, 0.65, F0, specularCol);
       specHighlights     *= (1.0-sideshadow);
       specHighlights     *= (1.0-shadow);
       diffuse.rgb += specHighlights;
     } 
 
-  /* // puddles 
-  float n1 = worley2(realPos.xz * 0.3).y - worley2(realPos.xz * 0.3 ).x;
-  float n2 = worley2(realPos.xz * 0.02).y - worley2(realPos.xz * 0.02 ).x;
-  float puddleNoise = mix(n1, n2, 0.25);
-  float puddleMask  = smoothstep(0.35, 0.45, puddleNoise);
-  puddleMask        = pow(puddleMask, 0.46);
-  vec3 puddleSpec = brdf(normalize(mix(sunDir, moonDir, moonFactor)), V, 0.1, worldNormal, diffuse.rgb, 0.0, F0, vec3(0.05, 0.05, 0.05)*(1.0+night));
-  float wetness = puddleMask * rain;
-  puddleSpec *= wetness;
-  vec3 puddleRefl = skyReflection * 1.2;
-  float reflStrength = wetness * fresnel;
-  if(v_extra.b < 0.9 && !blockUnderWater && !env.nether && !env.end && !env.underwater){
-    vec3 puddleBase = diffuse.rgb * mix(1.0, 0.4, wetness);
-    vec3 puddleColor = mix(puddleBase, puddleRefl, reflStrength);
-    diffuse.rgb = puddleColor;
-    //puddleSpec    *= mix(1.0, 3.0, wetness);
-    //puddleSpec    *= (1.0-sideshadow);
-    //puddleSpec    *= (1.0-shadow);
-    //diffuse.rgb += puddleSpec*0.67;
-  } */
-
   float downwards = max(-N.y, 0.0);
   float notBottom = 1.0 - downwards;
-
-  /* vec3 rippleN = norm(realPos.xz, ViewPositionAndTime.w * 1.6);
-  float Rupwards = max(N.y, 0.0);
-  vec2 storeuv = v_texcoord0;
-  vec2 texuv   = reflect(vec3(storeuv,1.0), normalize(rippleN*2.0-1.0)*0.125);
-  vec4 rippleDiffuse = texture2D(s_MatTexture, texuv);
-  if(!water && !blockUnderWater && !env.underwater && !env.nether && !env.end){
-    rippleDiffuse *= Rupwards;
-    rippleDiffuse.rgb *= vec3(0.257, 0.257, 0.265);
-    diffuse += rippleDiffuse*rain;
-  } */
 
   vec3 fstars = vec3(0.0, 0.0, 0.0);
   if(!env.end && !env.nether){
@@ -314,7 +288,7 @@ void main() {
     if(!env.underwater) {
         vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
         float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w);
-        float starFactor = smoothstep(0.5, 1.0, night)*(1.0-rain);
+        float starFactor = smoothstep(0.67, 1.0, night)*(1.0-rain);
         fstars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
         fstars *= starFactor;
     }
@@ -331,7 +305,11 @@ void main() {
    
   vec3 reflection = skyReflection*0.8;
   if(!env.end && !env.nether){
-    reflection = mix(skyReflection*0.8, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
+    #if NL_CLOUD_TYPE == 3
+      reflection = mix(skyReflection*0.8, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
+    #else 
+      reflection = mix(skyReflection*0.8, roundedC.rgb, roundedC.a * smoothstep(0.05,1.0,viewDir.y));
+    #endif 
   }
 
   vec3 endstars = vec3(0.0, 0.0, 0.0);

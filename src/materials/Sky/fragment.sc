@@ -23,7 +23,7 @@ void main() {
     vec3 viewDir = normalize(v_worldPos);
 
     vec4 whatTime = timeofday(TimeOfDay.x);
-      float night1 = whatTime.x;
+      float night = whatTime.x;
       float day   = whatTime.w;
       float dusk  = whatTime.z;
       float dawn  = whatTime.y;
@@ -32,8 +32,8 @@ void main() {
     float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
 
     vec3 sunDir = normalize(SunDirection.xyz);
-    vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * night1 * (1.0-dawn) * (1.0-dusk);
-    float moonFactor = night1 * (1.0 - dawn) * (1.0 - dusk);
+    vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * smoothstep(0.0, 0.7, night*night);
+    float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
     float sunDot = saturate(dot(viewDir, sunDir));
 
     nl_environment env;
@@ -51,19 +51,22 @@ void main() {
 
     vec3 skyColor = nlRenderSky(skycol, env, -viewDir, v_fogColor, v_underwaterRainTimeDay.z);
 
-    vec3 sun = getSun(sunDir, viewDir, night1, dusk, dawn);
-    sun *= (1.0-night1);
-    vec3 moon = getMoon(moonDir, viewDir, night1);
-    moon *= night1;
+    vec3 sun = sunS(sunDir, viewDir, dusk, dawn);
+    
+    sun *= exp(min(viewDir.y, 0.0) * 100.0);
+    sun *= (1.0-night);
+
+    vec3 moon = getMoon(moonDir, viewDir, night);
+    moon *= night;
     skyColor += sun;
     
     #ifdef NL_SHOOTING_STAR
-      skyColor += NL_SHOOTING_STAR*nlRenderShootingStar(viewDir, v_fogColor, v_underwaterRainTimeDay.z)*max(0.75, night1)*(1.0-rain);
+      skyColor += NL_SHOOTING_STAR*nlRenderShootingStar(viewDir, v_fogColor, v_underwaterRainTimeDay.z)*max(0.75, night)*(1.0-rain);
     #endif
 
     #ifdef LYNX_AURORA
       if(!env.underwater){
-        vec4 aurora = rdAurora(v_worldPos*0.001, viewDir, env, v_underwaterRainTimeDay.z, vec3(0.0,0.0,0.0), 0.0)*smoothstep(0.5, 1.0, night1)*(1.0-rain);
+        vec4 aurora = rdAurora(v_worldPos*0.001, viewDir, env, v_underwaterRainTimeDay.z, vec3(0.0,0.0,0.0), 0.0)*smoothstep(0.67, 1.0, night)*(1.0-rain);
         skyColor += mix(skyColor, aurora.rgb*1.5, aurora.a);
       }
     #endif
@@ -73,7 +76,7 @@ void main() {
         vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
         float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w);
         vec3 starColor = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
-        float starFactor     = smoothstep(0.5, 1.0, night1)*(1.0-rain);
+        float starFactor     = smoothstep(0.67, 1.0, night)*(1.0-rain);
         starColor     *= starFactor;
         skyColor += starColor;
       }

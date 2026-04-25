@@ -1,32 +1,6 @@
 #ifndef NL_CONFIG_H
 #define NL_CONFIG_H
 
-/*
-  NEWB SHADER MAIN CONFIG
-  This part contains base configuration options for the shader.
-
-  TOGGLES
-  - If [toggle] is mentioned, then
-    options can be commented to disable (by adding '//')
-  - eg: #define PLANTS_WAVE    -> this is ON
-        //#define PLANTS_WAVE  -> this is OFF
-
-  COLOR VALUES
-  - Color format: vec3(red,green,blue)
-  - 1.0 means 100%, 0.0 means 0%
-  - eg: vec3(1.0,1.0,0.0) = yellow
-
-  VALUES
-  - Values must be decimal
-  - eg. 32 is wrong, 32.0 is correct
-
-  TYPES
-  - Should be integer. options to choose will be mentioned there
-  - eg: #define NL_CLOUD_TYPE 2
-
-  Remember to rebuild the shader after making changes.
-*/
-
 /* Color correction */
 #define NL_TONEMAP_TYPE 9              // 1:Exponential, 2:Reinhard, 3:Extended Reinhard, 4:ACES 5:John Habel's filmic (used in BSBE) 
 #define NL_GAMMA 1.1                  // 0.3 low ~ 2.0 high
@@ -123,7 +97,7 @@
 #define NL_UNDERWATER_TINT vec3(0.9, 1.3, 0.9) // fog tint color when underwater
 
 /* Cloud type */
-#define NL_CLOUD_TYPE 3 // 0:vanilla, 1:soft, 2:rounded, 3:realistic, 4:PC killer
+#define NL_CLOUD_TYPE 2 // 0:vanilla, 1:soft, 2:rounded, 3:realistic, 4:PC killer
 
 /* Vanilla cloud settings - make sure to remove clouds.png when using this */
 #define NL_CLOUD0_THICKNESS 2.1      // 0.5 slim ~ 8.0 fat
@@ -144,7 +118,7 @@
 #define NL_CLOUD2_STEPS 16            // 3 low quality ~ 16 high quality
 #define NL_CLOUD2_SCALE vec2(0.04, 0.04)        // 0.003 large ~ 0.3 tiny
 #define NL_CLOUD2_SHAPE vec2(0.68, 0.68)          // 0.0 round ~ 1.0 box
-#define NL_CLOUD2_DENSITY 70.0       // 1.0 blurry ~ 100.0 sharp
+#define NL_CLOUD2_DENSITY 900.0       // 1.0 blurry ~ 100.0 sharp
 #define NL_CLOUD2_VELOCITY 0.8        // 0.0 static ~ 4.0 very fast
 //#define NL_CLOUD2_LAYER2                      // [toggle] extra cloud layer
 #define NL_CLOUD2_LAYER2_OFFSET 143.0           // 30.0 near ~ 300.0 very high
@@ -153,7 +127,7 @@
 #define NL_CLOUD2_LAYER2_STEPS 3                // 3 low quality ~ 16 high quality
 #define NL_CLOUD2_LAYER2_SCALE vec2(0.03, 0.03) // 0.003 large ~ 0.3 tiny
 #define NL_CLOUD2_LAYER2_SHAPE vec2(0.5, 0.4)   // 0.0 round ~ 1.0 box vec2(horizontal shape, vertical shape)
-#define NL_CLOUD2_LAYER2_DENSITY 25.0           // 1.0 blurry ~ 100.0 sharp
+#define NL_CLOUD2_LAYER2_DENSITY 900.0           // 1.0 blurry ~ 100.0 sharp
 #define NL_CLOUD2_LAYER2_VELOCITY 0.8           // 0.0 static ~ 4.0 very fast
 
 /* Realistic cloud settings */
@@ -178,8 +152,8 @@
 /* Falling Stars by i11212 */
 #define FALLING_STARS                             // [toggle]
 #define NL_FALLING_STARS_VELOCITY    10.0    
-#define NL_FALLING_STARS_DENSITY     0.004        // 0.001 rare ~ 0.05 many
-#define NL_FALLING_STARS_SCALE       28.0          // greater value = smaller stars
+#define NL_FALLING_STARS_DENSITY     0.0025        // 0.001 rare ~ 0.05 many
+#define NL_FALLING_STARS_SCALE       36.0          // greater value = smaller stars
 
 /* Starfield */
 #define STARFIELD

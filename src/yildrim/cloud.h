@@ -113,7 +113,7 @@ vec4 cirrus(sampler2D NOISE_0, vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir
     clouds *= smoothstep(0.3, 0.6, gaps);
     float scattering = dot(sunDir, viewDir) * 0.5 + 0.5;
     float forwardScatter = pow(max(scattering, 0.0), 2.0);
-    float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.3;
+    float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.1;
     float totalScatter = 0.6 + forwardScatter * 0.8 + backScatter;
     vec3 cloudColor = sunColor * totalScatter;
     cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;

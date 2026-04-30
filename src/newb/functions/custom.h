@@ -54,7 +54,6 @@ highp float getWave(highp vec2 uv, float time){
 
 float getWaterHeight(vec2 uv, float time) {
     return 0.03*getWave(uv,time); // your wave function or brightness of your texture (tex.r + tex.g + tex.b)/3.0
-    // return 0.05*Wave(uv, time);
 }
 
 // Water Noise & Wave Ends

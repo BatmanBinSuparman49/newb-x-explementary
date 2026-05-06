@@ -20,6 +20,40 @@ uniform vec4 TimeOfDay;
 
 SAMPLER2D_AUTOREG(s_cirrusTex);
 
+mat2 rotMat(float a){
+ return mat2(cos(a), sin(a), -sin(a), cos(a));
+}
+
+float randW(vec2 co)
+{
+ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float noiseW(vec2 p)
+{
+    vec2 ip = floor(p);
+    vec2 fp = fract(p);
+    fp = fp * fp * (3.0 - 2.0 * fp);
+
+    float res = mix(
+    mix(randW(ip),randW(ip+vec2(1.0,0.0)),fp.x),
+    mix(randW(ip+vec2(0.0,1.0)),randW(ip+vec2(1.0,1.0)),fp.x),fp.y);
+
+    return res;
+}
+
+highp float getWave(highp vec2 uv, float time){
+    float t = -time*1.0;
+
+    uv *= 1.5;
+    uv = mul(uv, rotMat(80.0));
+
+    float A = sin(noiseW(t+uv-sin(uv.y*0.2)+uv.x)) * 0.5;
+    float B = cos(noiseW(-t+uv+cos(uv.y*0.2)+uv.x)) * 0.5;
+    float C = sin(noiseW(uv * 3.0 + t * 0.6)) * 0.5;
+    return saturate(A + B);
+}
+
 void main() {
   #ifndef INSTANCING
     vec3 viewDir = normalize(v_worldPos);
@@ -59,17 +93,13 @@ void main() {
     vec3 sky = getAtmosphere(s_cirrusTex, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 1.0);
     
     vec3 moon = getMoon(-moonPos, viewDir, night);
-    moon *= night;
-    sky += moon;
+    moon *= night; 
 
-    // vec2 uvC = viewDir.xz/viewDir.y;
-    vec3 cloudCol = vec3(1.0, 0.8, 0.75)*day + vec3(0.8, 0.35, 0.05)*saturate(dawn+dusk) + vec3(0.5765, 0.584, 0.98)*night;
-    // vec4 Cirrus = cirrus(uvC, cloudCol, SunMoonDir, viewDir);
-    // sky    = mix(sky, Cirrus.rgb*1.5, Cirrus.a); 
+    vec3 cloudCol = vec3(1.0, 0.8, 0.75)*day + vec3(1.0, 0.35, 0.05)*saturate(dawn+dusk) + vec3(0.5765, 0.584, 0.98)*night;
 
     float jitter = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
     vec4 clouds3D = VLClouds(viewDir, SunMoonDir, cloudCol, ViewPositionAndTime.w, jitter);
-    // sky = mix(sky, clouds3D.rgb, clouds3D.a);
+    // sky = sky*(1.0-clouds3D.a) + clouds3D.rgb;
     
     #ifdef NL_SHOOTING_STAR
       skyColor += NL_SHOOTING_STAR*nlRenderShootingStar(viewDir, v_fogColor, v_underwaterRainTimeDay.z)*max(0.75, night)*(1.0-rain);
@@ -96,6 +126,8 @@ void main() {
     #ifdef NL_GALAXY_STARS
       skyColor += NL_GALAXY_STARS*nlGalaxy(viewDir, v_fogColor, env, v_underwaterRainTimeDay.z);
     #endif
+
+    sky += moon;
 
     skyColor = colorCorrection(sky);
     gl_FragColor = vec4(sky, 1.0);

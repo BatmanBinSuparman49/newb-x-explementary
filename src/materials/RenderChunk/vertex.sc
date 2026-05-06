@@ -122,9 +122,12 @@ void main() {
   vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
 
   vec4 fogColor;
-  // fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
-
-  fogColor.rgb = getAtmosphereVertex(viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 0.0);
+  if(env.end){
+    fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
+  } else {
+  fogColor.rgb = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 0.0);
+  }
+  
   fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogAndDistanceControl.xy);
   #ifdef NL_GODRAY
     fogColor.a = mix(fogColor.a, 1.0, NL_GODRAY*nlRenderGodRayIntensity(cPos, worldPos, t, uv1, relativeDist, FogColor.rgb));

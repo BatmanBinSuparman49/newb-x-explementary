@@ -46,8 +46,13 @@ void main() {
     worldPosition.y = -worldPosition.y;
     vec3 viewDir = normalize(worldPosition.xyz);
 
+  float t = ViewPositionAndTime.w
     vec4 fogColor;
-    fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
+  if(env.end){
+    fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
+  } else {
+    fogColor.rgb = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 0.0);
+  }
     fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogControl.xy);
 
     if (env.nether) {

@@ -8,31 +8,6 @@ float hash13(vec3 p3) {
     return fract((p3.x + p3.y) * p3.z);
 }
 
-float newnoise(vec3 p) {
-    vec3 i = floor(p);
-    vec3 f = fract(p);
-    vec3 u = f * f * (3.0 - 2.0 * f);
-
-    float n000 = hash13(i + vec3(0.0, 0.0, 0.0));
-    float n100 = hash13(i + vec3(1.0, 0.0, 0.0));
-    float n010 = hash13(i + vec3(0.0, 1.0, 0.0));
-    float n110 = hash13(i + vec3(1.0, 1.0, 0.0));
-    float n001 = hash13(i + vec3(0.0, 0.0, 1.0));
-    float n101 = hash13(i + vec3(1.0, 0.0, 1.0));
-    float n011 = hash13(i + vec3(0.0, 1.0, 1.0));
-    float n111 = hash13(i + vec3(1.0, 1.0, 1.0));
-
-    float nx00 = mix(n000, n100, u.x);
-    float nx10 = mix(n010, n110, u.x);
-    float nx01 = mix(n001, n101, u.x);
-    float nx11 = mix(n011, n111, u.x);
-
-    float nxy0 = mix(nx00, nx10, u.y);
-    float nxy1 = mix(nx01, nx11, u.y);
-
-    return mix(nxy0, nxy1, u.z);
-}
-
 #define pi radians(180.0)
 #define hpi (pi / 2.0)
 #define tau (pi * 2.0)
@@ -97,20 +72,20 @@ float fbm(vec2 p) {
 
 
 vec4 cirrus(sampler2D NOISE_0, vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir) {
-    vec2 p = uv * vec2(12.0, 5.0)*0.08;
+    vec2 p = uv * vec2(10.0, 5.0)*0.08;
 
     vec3 cirrusNoise = texture2D(NOISE_0, p).rrr;
     vec2 distorted = p + (cirrusNoise.r * 0.3) + (cirrusNoise.r * 0.1);
     vec3 distortedNoise = texture2D(NOISE_0, distorted).rgb;
 
-    float clouds = (distortedNoise.r + distortedNoise.g*0.1) / 1.7;
-    clouds += fbm(distorted * 0.4 + vec2_splat(50.0)) * 0.5;
-    clouds += fbm(distorted * 1.2 + vec2_splat(200.0)) * 0.25;
+    float clouds = (distortedNoise.r + distortedNoise.g*0.01) / 2.1;
+    clouds += fbm(distorted * 0.2 + vec2_splat(50.0)) * 0.5;
+    clouds += fbm(distorted * 1.8 + vec2_splat(200.0)) * 0.25;
     clouds /= 1.75;
     clouds = smoothstep(0.35, 0.75, clouds);
 
-    float gaps = texture2D(NOISE_0, p * 0.5 + 0.3).r;
-    clouds *= smoothstep(0.3, 0.6, gaps);
+    float gaps = texture2D(NOISE_0, p * 0.5 + 0.8).r;
+    clouds *= smoothstep(0.35, 0.5, gaps);
     float scattering = dot(sunDir, viewDir) * 0.5 + 0.5;
     float forwardScatter = pow(max(scattering, 0.0), 2.0);
     float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.1;
@@ -144,6 +119,31 @@ vec4 cirrus(sampler2D NOISE_0, vec2 uv, vec3 sunColor, vec3 sunDir, vec3 viewDir
 } */
 
 // 3D clouds by Lynx (code cave)
+
+float newnoise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    vec3 u = f * f * (3.0 - 2.0 * f);
+
+    float n000 = hash13(i + vec3(0.0, 0.0, 0.0));
+    float n100 = hash13(i + vec3(1.0, 0.0, 0.0));
+    float n010 = hash13(i + vec3(0.0, 1.0, 0.0));
+    float n110 = hash13(i + vec3(1.0, 1.0, 0.0));
+    float n001 = hash13(i + vec3(0.0, 0.0, 1.0));
+    float n101 = hash13(i + vec3(1.0, 0.0, 1.0));
+    float n011 = hash13(i + vec3(0.0, 1.0, 1.0));
+    float n111 = hash13(i + vec3(1.0, 1.0, 1.0));
+
+    float nx00 = mix(n000, n100, u.x);
+    float nx10 = mix(n010, n110, u.x);
+    float nx01 = mix(n001, n101, u.x);
+    float nx11 = mix(n011, n111, u.x);
+
+    float nxy0 = mix(nx00, nx10, u.y);
+    float nxy1 = mix(nx01, nx11, u.y);
+
+    return mix(nxy0, nxy1, u.z);
+}
 
 float fbmVL(vec3 position, int k) {
     float result = 0.0;
@@ -188,13 +188,13 @@ vec4 VLClouds(vec3 viewDir, vec3 sunDir, vec3 sunColor, float time, float jitter
 
         float scatteringC = smoothstep(0.2, 0.7, heightNorm);
 
-        float scattering = dot(sunDir, viewDir) * 0.5 + 0.5;
-        float forwardScatter = pow(max(scattering, 0.0), 2.0);
-        float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.3;
-        float totalScatter = 0.6 + forwardScatter * 0.8 + backScatter;
+        float scattering = dot(sunDir, -viewDir);
+        float forwardScatter = pow(max(scattering, 0.0), 2.0) * 0.8;
+        float backScatter = pow(max(1.0 - scattering, 0.0), 3.0) * 0.1;
+        float totalScatter = 0.3 + forwardScatter * 0.8 + backScatter;
 
         vec3 cloudColor = sunColor * scatteringC * totalScatter;
-        cloudColor += vec3(0.1, 0.15, 0.2) * (1.0 - totalScatter) * 0.3;
+        // cloudColor += vec3(0.1, 0.15, 0.2); // * (1.0 - totalScatter) * 0.3;
 
 
         cloudAccum += cloudColor * alpha;
@@ -206,6 +206,9 @@ vec4 VLClouds(vec3 viewDir, vec3 sunDir, vec3 sunColor, float time, float jitter
     #if !defined(TERRAIN)
         alphaAccum *= smoothstep(0.0, 0.5, viewDir.y);
     #endif
+
+    cloudAccum = 1.0 - exp(-1.2 * cloudAccum);
+    alphaAccum = 1.0 - exp(-1.2 * alphaAccum);
 
     return vec4(cloudAccum, alphaAccum);
 }

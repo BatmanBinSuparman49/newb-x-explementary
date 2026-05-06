@@ -15,5 +15,6 @@
 #include "functions/rain.h"
 #include "functions/wave.h"
 #include "functions/glow.h"
+#include "yildrim/atmosphere.h"
 
 #endif

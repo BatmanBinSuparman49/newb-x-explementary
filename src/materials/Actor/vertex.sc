@@ -17,6 +17,8 @@ uniform vec4 FogControl;
 uniform vec4 UVAnimation;
 uniform mat4 Bones[8];
 uniform vec4 ViewPositionAndTime;
+uniform vec4 SunDirection;
+uniform vec4 TimeOfDay;
 
 void main() {
   mat4 World = u_model[0];
@@ -46,8 +48,24 @@ void main() {
     worldPosition.y = -worldPosition.y;
     vec3 viewDir = normalize(worldPosition.xyz);
 
+    vec4 whatTime = timeofday(TimeOfDay.x);
+      float night = whatTime.x;
+      float day   = whatTime.w;
+      float dusk  = whatTime.z;
+      float dawn  = whatTime.y;
+
+      vec3 sunDir = normalize(SunDirection.xyz);
+      float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
+      vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
+      vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
+
+    float t = ViewPositionAndTime.w;
     vec4 fogColor;
-    fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
+    if(env.end){
+      fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
+    } else {
+      fogColor.rgb = getAtmosphereVertex(env, viewDir, normalize(SunDirection.xyz), SunMoonDir, day, night, dusk, dawn, 0.0);
+    }
     fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogControl.xy);
 
     if (env.nether) {

@@ -123,6 +123,11 @@ void main() {
 
   vec2 lit =  v_lightmapUV;
   float nolight = 1.0 - lit.y;
+
+  float isLeaf = 0.0;
+  #if defined(SEASONS) && (defined(ALPHA_TEST) || defined(OPAQUE))
+    isLeaf = 1.0;
+  #endif
   
   //sun angle
   float a = radians(45.0);
@@ -134,12 +139,20 @@ void main() {
   float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
   vec3 sunPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
   vec3 moonPos = -sunPos;
-  vec3 SunMoonDir = normalize(mix(sunDir, moonPos, night));
+  vec3 SunMoonDir = normalize(mix(sunDir, moonPos, smoothstep(0.0, 0.67, night)));
   
   vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
   vec3 reflectNormal = reflect(V, worldNormal);
   float upwards = max(N.y, 0.0);
+
+  float lightmapBrightness = max(v_lightmapUV.x, v_lightmapUV.y);
+  float dirlight = max(dot(N, SunMoonDir), 0.0);
+  dirlight += 0.5;
+
+  if(isLeaf == 0.0){
+    diffuse.rgb *= dirlight * lightmapBrightness;
+  }
 
   bool water = v_extra.b > 0.9;
 
@@ -178,8 +191,8 @@ void main() {
   diffuse.rgb *= shadowFactor;
 
   // side block shadows
-  float sideshadow = smoothstep(0.64, 0.62, v_color1.g);
-  diffuse.rgb *= 1.0-0.3*sideshadow;                     //increase 0.38 = darker shadow
+  float sideshadow = smoothstep(0.64, 0.62, v_color1.g) * max(v_lightmapUV.x, v_lightmapUV.y);
+  diffuse.rgb *= 1.0-0.15*sideshadow;                     //increase 0.38 = darker shadow
 
   #if defined(SEASONS) && (defined(OPAQUE) || defined(ALPHA_TEST))
     diffuse.rgb *= mix(vec3(1.0,1.0,1.0), texture2D(s_SeasonsTexture, v_color1.xy).rgb * 2.0, v_color1.z);
@@ -193,11 +206,6 @@ void main() {
   lightTint = mix(lightTint.bbb, lightTint*lightTint, 0.35 + 0.65*v_lightmapUV.y*v_lightmapUV.y*v_lightmapUV.y);
 
   color.rgb *= lightTint;
-
-  float isLeaf = 0.0;
-  #if defined(SEASONS) && (defined(ALPHA_TEST) || defined(OPAQUE))
-    isLeaf = 1.0;
-  #endif
 
   diffuse.rgb *= color.rgb;
   diffuse.rgb += glow;
@@ -275,7 +283,7 @@ void main() {
 
   vec3 skyReflection = vec3(0.0, 0.0, 0.0);
   if(!env.end && !env.nether){
-    skyReflection = getAtmosphereVertex(viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 1.0);
+    skyReflection = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 1.0);
   } else {
     skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
   }

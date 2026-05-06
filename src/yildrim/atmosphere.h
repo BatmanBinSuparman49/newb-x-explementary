@@ -18,7 +18,7 @@ vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn) {
 
   vec3 sunCol = vec3(1.0, 0.95, 0.85);
   vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
-  sunCol = mix(sunCol, currentSunCol, saturate(dawn+dusk));
+  sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
 
   return sunCol * m;
 }
@@ -147,11 +147,12 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
     vec3 sunDay = vec3(3.2, 2.8, 2.2); 
     vec3 currentSunCol = mix(sunRed, sunDay, transition);
 
-    vec3 sun = sunS(L, V, dusk, dawn) * currentSunCol * absoSun;
+    vec3 sun = sunS(L, V, dusk, dawn);
     sun *= exp(min(V.y, 0.0) * 100.0);
 
-    vec3 mie = getMie(V, L) * currentSunCol * 0.5 * absoSun;
+    vec3 mie = getMie(V, L) * currentSunCol * 0.5;
     mie *= exp(min(V.y, 0.0) * 50.0);
+    mie = max(pow(mie, 0.7), 0.0);
 
     float stars = mix(getStars(V), 0.0, a);
 
@@ -166,7 +167,9 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
     vec3 atmosphere = mix(nSky, dSky, scatter);
     atmosphere = mix(atmosphere, Cirrus.rgb*mix(1.5, 1.0, nightFactor), Cirrus.a);
 
-    atmosphere = mix(atmosphere, sun, sun) + mie;
+    vec3 finalSun = sun + mie;
+
+    atmosphere += finalSun;
 
     vec3 spaceColor = vec3(0.1, 0.15, 0.35); 
     if (V.y > 0.0)
@@ -182,50 +185,64 @@ vec3 getAtmosphere(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float day
 }
 
 
-vec3 GetSkyVertex(vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor, float nightFactor, float dusk, float dawn, float cirrusFactor) {
-    vec3 dSky = day(V, L) * 3.0;
-    vec3 nSky = night(V, L) * 0.5;
+vec3 dusk_zenith() {
+    float y = 1.0; 
+    vec3 col = vec3(0.67, 0.4 - exp(-y * 50.0) * 0.15, 0.1) * exp(-y * 15.0);
+    col += vec3(1.0, 0.5, 0.5) * (1.0 - exp(-y * 8.0)) * exp(-y * 0.9);
+    return col * 1.6;
+}
+
+vec3 day_zenith(vec3 L) {
+    float y = 1.0;
+    vec3 col = vec3(0.56, 0.57 - exp(-y * 16.0) * 0.06, 1.0) * exp(-y * 4.5);
+    col += vec3(0.2, 0.3, 0.6) * 1.1 * (1.0 - exp(-y * 4.0)) * exp(-y * 0.9);
+    
+    // Day zenith is influenced by dusk logic as the sun (L.y) sets
+    vec3 base_day = col * 1.1;
+    return mix(base_day * dusk_zenith(), base_day, saturate(L.y));
+}
+
+vec3 night_zenith() {
+    float y = 1.0;
+    vec3 col = vec3(0.0, 0.0, 0.0);
+    col += vec3(0.4, 0.53 - exp(-y * 200.0) * 0.04, 0.6) * 0.8 * exp(-y * 5.0);
+    col += vec3(0.0, 0.08, 0.2) * 0.3 * (1.0 - exp(-y * 10.0)) * exp(-y);
+    return col * 1.2;
+}
+
+vec3 GetSkyVertex(nl_environment env, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor, float nightFactor, float dusk, float dawn, float cirrusFactor) {
+
+    vec3 dSky;
+    if(env.underwater){
+        dSky = day_zenith(L) * 2.0;
+    } else {
+        dSky = day(V, L) * 3.0;
+    }
+
+    vec3 nSky;
+
+    if(env.underwater){
+       nSky = night_zenith() * 0.7; 
+    }else{
+        nSky = night(V, L) * 0.5;
+    }
 
     float a = dayFactor;
     float b = nightFactor;
-    float depthView  = max(V.y, 0.0);
-    float depthLight = max(L.y * 0.5 + 0.02, 0.01); 
+
     float VoL = distance(V, L);
 
     float coeff   = mix(mix(1.0, 0.05, a), 3.0, b); 
     float scatter = exp(-VoL * coeff);
     scatter       = mix(scatter, 0.0, b);
 
-    vec3 abso    = calcAbsorption(mix(nSky, dSky, scatter), depthView);
-    vec3 absoSun = calcAbsorption(mix(nSky, dSky, scatter), depthLight);
-
-    float sunsetFactor = saturate(L.y * 2.5); 
-    float transition = pow(sunsetFactor, 2.0); 
-    
-    vec3 sunRed = vec3(4.0, 0.3, 0.02);
-    vec3 sunDay = vec3(3.2, 2.8, 2.2); 
-    vec3 currentSunCol = mix(sunRed, sunDay, transition);
-
-    vec3 sun = sunS(L, V, dusk, dawn) * currentSunCol * absoSun;
-    sun *= exp(min(V.y, 0.0) * 100.0);
-
-    vec3 mie = getMie(V, L) * currentSunCol * 0.5 * absoSun;
-    mie *= exp(min(V.y, 0.0) * 50.0);
-
-    float stars = mix(getStars(V), 0.0, a);
-
-    a += saturate(dawn+dusk);
-    sun *= a;
-    mie *= a;
-
     vec3 atmosphere = mix(nSky, dSky, scatter);
-    atmosphere += mie;
 
     return atmosphere;
 }
 
-vec3 getAtmosphereVertex(vec3 V, vec3 L, vec3 SunMoonDir, float day, float night, float dusk, float dawn, float cirrusFactor) {
-    vec3 sky = GetSkyVertex(V, L, SunMoonDir, day, night, dusk, dawn, cirrusFactor) * BRIGHTNESS;
+vec3 getAtmosphereVertex(nl_environment env, vec3 V, vec3 L, vec3 SunMoonDir, float day, float night, float dusk, float dawn, float cirrusFactor) {
+    vec3 sky = GetSkyVertex(env, V, L, SunMoonDir, day, night, dusk, dawn, cirrusFactor) * BRIGHTNESS;
     sky = 1.0 - exp(-1.2 * sky);
     return sky;
 }

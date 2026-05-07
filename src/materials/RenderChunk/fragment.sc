@@ -118,6 +118,7 @@ void main() {
       float dawn  = whatTime.y;
 
   float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
+  nl_environment env = nlDetectEnvironment(FogColor.rgb, FogAndDistanceControl.xyz);
     
   vec4 color = v_color0;
 
@@ -147,8 +148,13 @@ void main() {
   float upwards = max(N.y, 0.0);
 
   float lightmapBrightness = max(v_lightmapUV.x, v_lightmapUV.y);
-  float dirlight = max(dot(N, SunMoonDir), 0.0);
-  dirlight += 0.5;
+  float dirlight = max(dot(N, SunMoonDir), 0.4);
+  if(!env.underwater){
+      dirlight += 0.1;
+  } else {
+      dirlight += 0.4;
+  }
+
 
   if(isLeaf == 0.0){
     diffuse.rgb *= dirlight; // * lightmapBrightness;
@@ -176,7 +182,6 @@ void main() {
  #if !defined(TRANSPARENT) && !defined(ALPHA_TEST) 
  #endif
 
-  nl_environment env = nlDetectEnvironment(FogColor.rgb, FogAndDistanceControl.xyz);
   nl_skycolor skycol;
   if (env.underwater) {
      skycol = nlUnderwaterSkyColors(env.rainFactor, FogColor.rgb);

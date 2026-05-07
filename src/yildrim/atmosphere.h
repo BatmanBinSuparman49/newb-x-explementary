@@ -207,7 +207,7 @@ vec3 night_zenith() {
     vec3 col = vec3(0.0, 0.0, 0.0);
     col += vec3(0.4, 0.53 - exp(-y * 200.0) * 0.04, 0.6) * 0.8 * exp(-y * 5.0);
     col += vec3(0.0, 0.08, 0.2) * 0.3 * (1.0 - exp(-y * 10.0)) * exp(-y);
-    return col * 1.2;
+    return col * 2.5;
 }
 
 vec3 GetSkyVertex(nl_environment env, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor, float nightFactor, float dusk, float dawn, float cirrusFactor) {
@@ -222,7 +222,7 @@ vec3 GetSkyVertex(nl_environment env, vec3 V, vec3 L, vec3 SunMoonDir, float day
     vec3 nSky;
 
     if(env.underwater){
-       nSky = night_zenith() * 0.7; 
+       nSky = night_zenith()*1.5; 
     }else{
         nSky = night(V, L) * 0.5;
     }

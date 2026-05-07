@@ -67,7 +67,7 @@ vec3 nlLighting(
     float lightIntensity = NL_SUN_INTENSITY*(1.0 - rainDim)*(1.0 + NL_NIGHT_BRIGHTNESS*nightFactor);
 
     // min ambient in caves
-    light = vec3_splat((1.35+NL_CAVE_BRIGHTNESS)*(1.0-uv1.x)*(1.0-uv1.y));
+    light = vec3_splat((2.35+NL_CAVE_BRIGHTNESS)*(1.0-uv1.x)*(1.0-uv1.y));
 
     // sky ambient
     light += mix(skycol.horizon, skycol.zenith, 0.5+uv1.y-0.5*lit.y)*(lit.y*(3.0-2.0*uv1.y)*(1.3 + (4.0*nightFactor) - rainDim)) * (1.0 - rainDim * 0.7);

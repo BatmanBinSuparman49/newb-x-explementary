@@ -121,7 +121,7 @@ void main() {
   vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
   vec3 SunMoonDir = sunDir.y > 0.0 ? sunDir : -moonPos;
 
-    float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
+  float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
   vec4 fogColor;
   if(env.end){
     fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);

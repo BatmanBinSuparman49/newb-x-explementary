@@ -42,6 +42,7 @@ void main() {
     vec2 gv = 2.0*v_texcoord1 - 1.0;
     gv = 1.0 - gv*gv;
     float g = gv.x*gv.y;
+    // g *= 0.1;
     if (UVOffsetAndScale.w > 3.5*UVOffsetAndScale.z) { // isRain
       g *= 0.9*gv.x;
     }

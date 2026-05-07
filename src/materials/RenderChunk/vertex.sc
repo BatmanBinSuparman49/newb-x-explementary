@@ -121,11 +121,12 @@ void main() {
   vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
   vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
 
+    float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
   vec4 fogColor;
   if(env.end){
     fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
   } else {
-  fogColor.rgb = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 0.0);
+  fogColor.rgb = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, rain, 0.0);
   }
   
   fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogAndDistanceControl.xy);

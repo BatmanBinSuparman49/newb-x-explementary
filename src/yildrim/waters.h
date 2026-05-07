@@ -176,7 +176,7 @@ vec4 applyWaterEffect(
     float fresnel = calculateFresnel(NdotV, 1.2);
     float blend = mix(0.04, 1.0, fresnel);
 
-    vec3 skyReflection = getAtmosphere(cirrusTex, normalize(reflDir), normalize(sunDir), SunMoonDir, day, night, dusk, dawn, 0.0);
+    vec3 skyReflection = getAtmosphere(cirrusTex, normalize(reflDir), normalize(sunDir), SunMoonDir, day, night, dusk, dawn, rain, 0.0);
     diffuse.rgb = mix(diffuse.rgb, skyReflection, 1.0);
 
     reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, fresnel);
@@ -205,7 +205,7 @@ vec4 applyWaterEffect(
         }
     }
     if(!env.end && !env.nether){
-        diffuse.rgb += sun*(1.0-nolight);
+        // diffuse.rgb += sun*(1.0-nolight);
         diffuse.rgb += moon*(1.0-nolight);
     }
     return diffuse;

@@ -17,6 +17,7 @@ uniform vec4 TileLightColor;
 uniform vec4 ViewPositionAndTime;
 uniform vec4 SunDirection;
 uniform vec4 TimeOfDay;
+uniform vec4 FogAndDistanceControl;
 
 void main() {
   mat4 World = u_model[0];
@@ -53,11 +54,12 @@ void main() {
     vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
 
     float t = ViewPositionAndTime.w;
+    float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
     vec4 fogColor;
   if(env.end){
     fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
   } else {
-    fogColor.rgb = getAtmosphereVertex(env, viewDir, normalize(SunDirection.xyz), SunMoonDir, day, night, dusk, dawn, 0.0);
+    fogColor.rgb = getAtmosphereVertex(env, viewDir, normalize(SunDirection.xyz), SunMoonDir, day, night, dusk, dawn, rain, 0.0);
   }
     fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogControl.xy);
 

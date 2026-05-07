@@ -237,7 +237,7 @@ void main() {
   if(water){
     float fogDensity = depth * 0.5;
     float visibility = exp(-fogDensity);
-    diffuse.a *= 0.4 + (visibility * 0.5);
+    diffuse.a *= 0.1 + (visibility);
   }
 
   float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
@@ -288,7 +288,7 @@ void main() {
 
   vec3 skyReflection = vec3(0.0, 0.0, 0.0);
   if(!env.end && !env.nether){
-    skyReflection = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 1.0);
+    skyReflection = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, rain, 1.0);
   } else {
     skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
   }
@@ -306,7 +306,7 @@ void main() {
     rippleDiffuse.rgb = mix(rippleDiffuse.rgb, reflectionEffect, upwards);
     vec3 wetColor = diffuse.rgb * 0.6;
     vec3 wetFinal = mix(wetColor, rippleDiffuse.rgb, 0.45);
-    diffuse.rgb = mix(diffuse.rgb, wetFinal, rain); 
+    // diffuse.rgb = mix(diffuse.rgb, wetFinal, rain); 
   }
 
   // specular highlights 

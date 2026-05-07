@@ -204,9 +204,9 @@
 #define NL_ENTITY_EDGE_HIGHLIGHT 0.45 // 0.0 no highlight ~ 1.6 bright highlight
 
 /* Weather particles */
-#define NL_WEATHER_SPECK 1.0         // [toggle] 0.0 vanilla texture ~ 1.0 soft speck
+#define NL_WEATHER_SPECK 0.0         // [toggle] 0.0 vanilla texture ~ 1.0 soft speck
 #define NL_WEATHER_RAIN_SLANT 3.5    // 1.0 minimal ~ 8.0 violent
-#define NL_WEATHER_PARTICLE_SIZE 0.9 // 0.5 tiny ~ 4.0 large
+#define NL_WEATHER_PARTICLE_SIZE 1.0 // 0.5 tiny ~ 4.0 large
 
 /* Lava effects */
 #define NL_LAVA_NOISE            // [toggle] darken lava in certain regions

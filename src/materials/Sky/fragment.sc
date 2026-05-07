@@ -90,7 +90,7 @@ void main() {
     sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
 
     vec3 skyColor = nlRenderSky(skycol, env, -viewDir, v_fogColor, v_underwaterRainTimeDay.z);
-    vec3 sky = getAtmosphere(s_cirrusTex, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, 1.0);
+    vec3 sky = getAtmosphere(s_cirrusTex, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, rain, 1.0);
     
     vec3 moon = getMoon(-moonPos, viewDir, night);
     moon *= night; 

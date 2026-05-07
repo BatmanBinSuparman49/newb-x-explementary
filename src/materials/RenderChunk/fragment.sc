@@ -148,11 +148,11 @@ void main() {
   float upwards = max(N.y, 0.0);
 
   float lightmapBrightness = max(v_lightmapUV.x, v_lightmapUV.y);
-  float dirlight = max(dot(N, SunMoonDir), 0.4);
+  float dirlight = max(dot(N, SunMoonDir), 0.5);
   if(!env.underwater){
       dirlight += 0.1;
   } else {
-      dirlight += 0.4;
+      dirlight += 0.55;
   }
 
 

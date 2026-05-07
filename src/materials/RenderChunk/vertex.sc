@@ -119,7 +119,7 @@ void main() {
   vec3 sunDir = normalize(SunDirection.xyz);
   float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
   vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
-  vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, night));
+  vec3 SunMoonDir = sunDir.y > 0.0 ? sunDir : -moonPos;
 
     float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
   vec4 fogColor;

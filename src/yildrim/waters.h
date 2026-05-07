@@ -119,15 +119,14 @@ vec4 applyWaterEffect(
     vec3 normal = mul(Wnormal, getTBN(N));
     vec3 reflDir = reflect(viewDir, normal);
 
-    float glossstrength = 0.5;
-
-    vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
-    vec3 specular = brdf(L, V, 0.22, normal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
-
     // Sun & Moon 
     float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
     vec3 moonPos = vec3(cos(sunA), sin(sunA), 0.7);
-    vec3 SunMoonDir = mix(normalize(sunDir), -moonPos, night);
+    vec3 SunMoonDir = sunDir.y > 0.0 ? sunDir : -moonPos;
+
+    vec3 sunCol = vec3(1.0, 0.95, 0.85);
+    vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
+    sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));    
 
     vec3 sun = sunS(normalize(sunDir), normalize(reflDir), dusk, dawn);
     sun *= (1.0-night);
@@ -205,7 +204,7 @@ vec4 applyWaterEffect(
         }
     }
     if(!env.end && !env.nether){
-        // diffuse.rgb += sun*(1.0-nolight);
+        // diffuse.rgb += specular*(1.0-nolight);
         diffuse.rgb += moon*(1.0-nolight);
     }
     return diffuse;

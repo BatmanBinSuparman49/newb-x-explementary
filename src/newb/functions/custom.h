@@ -53,8 +53,7 @@ highp float getWave(highp vec2 uv, float time){
 }
 
 float getWaterHeight(vec2 uv, float time) {
-    return 0.03*getWave(uv,time); // your wave function or brightness of your texture (tex.r + tex.g + tex.b)/3.0
-}
+    return 0.03*getWave(uv,time); }
 
 // Water Noise & Wave Ends
 
@@ -80,7 +79,7 @@ vec4 timedetection(vec4 FogColor,vec4 FogAndDistanceControl){
 }
 
 vec4 applyWaterEffect(
-    vec3 v_pos, vec3 v_wpos, vec3 viewDir, vec3 V, vec3 L, vec3 texcol,
+    sampler2D cloudTex, vec3 v_pos, vec3 v_wpos, vec3 viewDir, vec3 V, vec3 L, vec3 texcol,
     vec4 diffuse, vec4 reflectionColor, 
     nl_skycolor skycol, nl_environment  env, vec3 FogColor,
     float time, float night, float dusk, float dawn, float rain, float nolight,
@@ -114,7 +113,7 @@ vec4 applyWaterEffect(
 
     vec4 v_color1 = vec4(skycol.zenith, rain);
     vec4 v_color2 = vec4(skycol.horizonEdge, time);
-    vec4 roundedC = renderCloudsRounded(reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
+    vec4 roundedC = renderCloudsRounded(cloudTex, reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
     vec3 sun = sunS(sunDir, reflDir, dusk, dawn);
     sun *= exp(min(reflDir.y, 0.0) * 100.0);

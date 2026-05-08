@@ -11,6 +11,7 @@ $input v_color0, v_color1, v_fog, v_refl, v_texcoord0, v_lightmapUV, v_extra, v_
 SAMPLER2D_AUTOREG(s_MatTexture);
 SAMPLER2D_AUTOREG(s_SeasonsTexture);
 SAMPLER2D_AUTOREG(s_LightMapTexture);
+SAMPLER2D_AUTOREG(s_CloudTexture);
 
 uniform vec4 FogAndDistanceControl;
 uniform vec4 FogColor;
@@ -219,7 +220,7 @@ void main() {
     }
   }
   // water 
-  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, CameraPosition.xz);
+  diffuse = applyWaterEffect(s_CloudTexture, realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, CameraPosition.xz);
 
   // water absorption
   float depth = 1.0 - pow(v_lightmapUV.y,2.0);
@@ -266,7 +267,7 @@ void main() {
   vec3 roundPos;
   roundPos.xz = 56.0 * viewDir.xz/max(viewDir.y, 0.05);
   roundPos.y = 1.0;
-  vec4 roundedC = renderCloudsRounded(viewDir, roundPos, rain, ViewPositionAndTime.w, skycol.horizonEdge, skycol.zenith, NL_CLOUD_PARAMS(_));
+  vec4 roundedC = renderCloudsRounded(s_CloudTexture, viewDir, roundPos, rain, ViewPositionAndTime.w, skycol.horizonEdge, skycol.zenith, NL_CLOUD_PARAMS(_));
 
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 

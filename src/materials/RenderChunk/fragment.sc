@@ -140,8 +140,7 @@ void main() {
   float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
   vec3 sunPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
   vec3 moonPos = -sunPos;
-  //vec3 SunMoonDir = normalize(mix(sunDir, moonPos, smoothstep(0.0, 0.67, night)));
-  vec3 SunMoonDir = sunDir.y > 0.0 ? sunDir : moonPos;
+  vec3 SunMoonDir = normalize(mix(sunDir, moonPos, smoothstep(0.0, 0.67, night)));
   vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
   vec3 reflectNormal = reflect(V, worldNormal);

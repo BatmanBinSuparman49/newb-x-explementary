@@ -83,7 +83,7 @@ void main() {
     vec3 sunDir = normalize(SunDirection.xyz);
     float sunA = clamp(((349.305545 * v_fogColor.g - 159.858192) * v_fogColor.g + 30.557216) * v_fogColor.g - 1.628452, -1.0, 1.0);
     vec3 moonPos =  normalize(vec3(cos(sunA), sin(sunA), 0.7));
-    vec3 SunMoonDir = sunDir.y > 0.0 ? sunDir : -moonPos;
+    vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, smoothstep(0.0, 0.67, night)));
 
     vec3 sunCol = vec3(1.2, 0.95, 0.72);
     vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 

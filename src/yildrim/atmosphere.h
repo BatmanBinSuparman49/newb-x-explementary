@@ -9,13 +9,6 @@ vec3 sunS(vec3 sunDir, vec3 viewDir, float dusk, float dawn) {
   float m = 0.0075 / (0.0001 + sunDot);
   m = pow(m, 1.2) * 0.1;
 
-  float sunsetFactor = saturate(sunDir.y * 2.5); 
-  float transition = pow(sunsetFactor, 2.0); 
-    
-  vec3 sunRed = vec3(4.0, 0.3, 0.02);
-  vec3 sunDay = vec3(3.2, 2.8, 2.2); 
-  vec3 currentSunCol = mix(sunRed, sunDay, transition);
-
   vec3 sunCol = vec3(1.0, 0.95, 0.85);
   vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
   sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));
@@ -153,7 +146,7 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
     float transition = pow(sunsetFactor, 2.0); 
     
     vec3 sunRed = vec3(4.0, 0.3, 0.02);
-    vec3 sunDay = vec3(3.2, 2.8, 2.2); 
+    vec3 sunDay = vec3(1.0, 0.875, 0.688); 
     vec3 currentSunCol = mix(sunRed, sunDay, transition);
 
     vec3 sun = sunS(L, V, dusk, dawn);
@@ -162,7 +155,7 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
 
     vec3 mie = getMie(V, L) * currentSunCol * 0.5;
     mie *= exp(min(V.y, 0.0) * 50.0);
-    mie = max(pow(mie, 0.6), 0.0);
+    mie = max(pow(mie, 0.55), 0.0);
     mie = mix(mie, cSatur(mie, 0.5) * 0.5, rain*rain);
 
     float stars = mix(getStars(V), 0.0, a);

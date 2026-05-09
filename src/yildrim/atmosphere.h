@@ -172,7 +172,7 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
     vec3 atmosphere = mix(nSky, dSky, scatter);
     atmosphere = mix(atmosphere, Cirrus.rgb*mix(1.5, 1.0, nightFactor), Cirrus.a);
 
-    vec3 finalSun = sun + mie;
+    vec3 finalSun = sun*cirrusFactor + mie;
 
     atmosphere += finalSun;
 

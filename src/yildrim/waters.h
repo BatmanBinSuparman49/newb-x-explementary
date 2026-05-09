@@ -122,14 +122,22 @@ vec4 applyWaterEffect(
     // Sun & Moon 
     float sunA = clamp(((349.305545 * FogColor.g - 159.858192) * FogColor.g + 30.557216) * FogColor.g - 1.628452, -1.0, 1.0);
     vec3 moonPos = vec3(cos(sunA), sin(sunA), 0.7);
-    vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, smoothstep(0.0, 0.67, night)));
+    vec3 SunMoonDir = normalize(mix(sunDir, -moonPos, smoothstep(0.0, 0.67, night)));   
+    float a = saturate(dawn+dusk+day);
+    
+    vec3 sun = sunS(normalize(sunDir), normalize(reflDir), dusk, dawn)*a;
+    sun = mix(sun, cSatur(sun, 0.5) * 0.5, rain*rain);
 
-    vec3 sunCol = vec3(1.0, 0.95, 0.85);
-    vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
-    sunCol = mix(sunCol, dawnCol, saturate(dawn+dusk));    
-
-    vec3 sun = sunS(normalize(sunDir), normalize(reflDir), dusk, dawn);
-    sun *= (1.0-night);
+    vec3 mie = getMie(normalize(reflDir), normalize(sunDir))*a;
+    float sunsetFactor = saturate(sunDir.y * 2.5); 
+    float transition = pow(sunsetFactor, 2.0); 
+    vec3 sunRed = vec3(4.0, 0.3, 0.02);
+    vec3 sunDay = vec3(1.0, 0.875, 0.688); 
+    vec3 currentSunCol = mix(sunRed, sunDay, transition);
+    mie *= currentSunCol * 0.5;
+    mie = max(pow(mie, 0.55), 0.0);
+    mie = mix(mie, cSatur(mie, 0.5) * 0.5, rain*rain);
+    sun += mie;
 
     vec3 moon = getMoon(normalize(-moonPos), normalize(reflDir), night);
     moon *= night;
@@ -204,7 +212,7 @@ vec4 applyWaterEffect(
         }
     }
     if(!env.end && !env.nether){
-        // diffuse.rgb += specular*(1.0-nolight);
+        diffuse.rgb += sun*(1.0-nolight);
         diffuse.rgb += moon*(1.0-nolight);
     }
     return diffuse;

@@ -221,24 +221,6 @@ void main() {
   // water 
   diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, day, s_cirrusTex);
 
-  // water absorption
-  float depth = 1.0 - pow(v_lightmapUV.y,2.0);
-  vec3 absorption;
-  bool fromSurface = v_lightmapUV.y < 0.9 ;
-
-  vec3 absorptionCoeff = vec3(2.5, 1.8, 1.2); // Red, Green, Blue
-  absorption = exp(-depth * absorptionCoeff);
-   
-  if(water){
-    diffuse.rgb *= absorption;
-  }
-
-  if(water){
-    float fogDensity = depth * 0.5;
-    float visibility = exp(-fogDensity);
-    diffuse.a *= 0.1 + (visibility);
-  }
-
   float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
   vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 

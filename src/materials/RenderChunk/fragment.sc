@@ -219,7 +219,11 @@ void main() {
   bool doCaustics = (camDist < causticDist);
 
   // water 
-  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, day, s_cirrusTex);
+  diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0.0, 0.0, 0.0, 0.0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, day, s_cirrusTex);
+  
+  //diffuse = waterfunction(s_cirrusTex, viewDir, sunDir, SunMoonDir, FogColor.rgb, FogAndDistanceControl, day, 
+  //                        night, dusk, dawn, rain, nolight, diffuse, N, realPos, v_lightmapUV, water, ViewPositionAndTime.w);
+
 
   float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
   vec3 dawnCol  = vec3(1.0, 0.35, 0.05); 
@@ -277,7 +281,7 @@ void main() {
   vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
-  vec3 rippleN = norm(realPos.xz*1.5, ViewPositionAndTime.w);
+  /* vec3 rippleN = norm(realPos.xz*1.5, ViewPositionAndTime.w);
   vec2 storeuv = v_texcoord0;
   vec2 texuv   = reflect(vec3(storeuv,1.0), normalize(rippleN*2.0-1.0)*0.125);
   vec4 rippleDiffuse = texture2D(s_MatTexture, texuv);
@@ -288,7 +292,7 @@ void main() {
     vec3 wetColor = diffuse.rgb * 0.6;
     vec3 wetFinal = mix(wetColor, rippleDiffuse.rgb, 0.45);
     // diffuse.rgb = mix(diffuse.rgb, wetFinal, rain); 
-  }
+  } */
 
   // specular highlights 
   float specDist = FogAndDistanceControl.z*0.67;

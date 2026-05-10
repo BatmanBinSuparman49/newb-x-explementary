@@ -177,8 +177,11 @@ vec3 GetSky(sampler2D NOISE_0, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor,
     atmosphere += finalSun;
 
     vec3 spaceColor = vec3(0.1, 0.15, 0.35); 
-    if (V.y > 0.0)
+    if (V.y > 0.0){
         atmosphere += spaceColor * stars * nightFactor * rain;
+    }
+
+    atmosphere = cSatur(atmosphere, 1.2); 
 
     return atmosphere;
 }

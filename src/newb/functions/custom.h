@@ -163,7 +163,7 @@ vec4 applyWaterEffect(
     bool flatWater = v_wpos.y < 0.0;
 
     if (!env.end && flatWater) {
-        diffuse.rgb = reflections * fresnel;
+        diffuse.rgb += reflections * fresnel;
         diffuse.a = mix(diffuse.a * 0.75, 1.0, pow(1.0 - NdotV, 2.0));
         if(doEffect){
             #ifdef LYNX_AURORA

@@ -126,7 +126,7 @@ void main() {
   if(env.end){
     fogColor.rgb = nlRenderSky(skycol, env, viewDir, FogColor.rgb, t);
   } else {
-  fogColor.rgb = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, rain, 0.0);
+  fogColor.rgb = getAtmosphereVertex(env, viewDir, sunDir, day, night, rain);
   }
   
   fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogAndDistanceControl.xy);

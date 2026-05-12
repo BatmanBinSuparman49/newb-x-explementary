@@ -222,7 +222,7 @@ void main() {
   diffuse = applyWaterEffect(realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0.0, 0.0, 0.0, 0.0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, day, s_cirrusTex);
   
   //diffuse = waterfunction(s_cirrusTex, viewDir, sunDir, SunMoonDir, FogColor.rgb, FogAndDistanceControl, day, 
-  //                        night, dusk, dawn, rain, nolight, diffuse, N, realPos, v_lightmapUV, water, ViewPositionAndTime.w);
+  //                       night, dusk, dawn, rain, nolight, diffuse, N, realPos, v_wpos.xyz, v_lightmapUV, env, water, ViewPositionAndTime.w);
 
 
   float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
@@ -273,7 +273,7 @@ void main() {
 
   vec3 skyReflection = vec3(0.0, 0.0, 0.0);
   if(!env.end && !env.nether){
-    skyReflection = getAtmosphereVertex(env, viewDir, sunDir, SunMoonDir, day, night, dusk, dawn, rain, 1.0);
+    skyReflection = getAtmosphereVertex(env, viewDir, sunDir, day, night, rain);
   } else {
     skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
   }

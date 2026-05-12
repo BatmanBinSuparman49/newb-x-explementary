@@ -225,7 +225,7 @@ vec3 night_zenith(float rain) {
     return mix(Col, rainCol, rain*rain);
 }
 
-vec3 GetSkyVertex(nl_environment env, vec3 V, vec3 L, vec3 SunMoonDir, float dayFactor, float nightFactor, float dusk, float dawn, float rain, float cirrusFactor) {
+vec3 GetSkyVertex(nl_environment env, vec3 V, vec3 L, float dayFactor, float nightFactor, float rain) {
 
     vec3 dSky;
     if(env.underwater){
@@ -256,8 +256,8 @@ vec3 GetSkyVertex(nl_environment env, vec3 V, vec3 L, vec3 SunMoonDir, float day
     return atmosphere;
 }
 
-vec3 getAtmosphereVertex(nl_environment env, vec3 V, vec3 L, vec3 SunMoonDir, float day, float night, float dusk, float dawn, float rain, float cirrusFactor) {
-    vec3 sky = GetSkyVertex(env, V, L, SunMoonDir, day, night, dusk, dawn, rain, cirrusFactor) * BRIGHTNESS;
+vec3 getAtmosphereVertex(nl_environment env, vec3 V, vec3 L, float day, float night, float rain) {
+    vec3 sky = GetSkyVertex(env, V, L, day, night, rain) * BRIGHTNESS;
     sky = 1.0 - exp(-1.2 * sky);
     return sky;
 }

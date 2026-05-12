@@ -373,20 +373,20 @@ float triNoise2d(in vec2 p, float spd,float time)
 {
     float z=1.8;
     float z2=2.5;
-    float rz = 0.;
-      p = mul(mm2(p.x * 0.06), p);
+    float rz = 0.0;
+    p = mul(mm2(p.x * 0.06), p);
     vec2 bp = p;
-    for (int i=0; i<3; i++ )
+    for (int i=0; i<2; i++ )
     {
         vec2 dg = tri2(bp*1.85)*.75;
         dg = mul(mm2(time*spd), dg);
         p -= dg/z2;
 
         bp *= 1.3;
-        z2 *= .45;
-        z *= .42;
-        p *= 1.21 + (rz-1.0)*.02;
-
+        z2 *= 0.45;
+        z *= 0.42;
+        p *= 1.21 + (rz-1.0)*0.02;
+      
         rz += tri(p.x+tri(p.y))*z;
         p = mul(-m2, p);
     }
@@ -402,14 +402,15 @@ vec4 rdAurora(vec3 ro, vec3 rd, nl_environment env, float time, vec3 FOG_COLOR, 
 
     // LOD based on distance
     int steps = 1; // default
-    if (distXZ < 20.0) steps = 12;       // Near (LOD 3)
-    else if (distXZ < 60.0) steps = 8;   // Mid (LOD 2)
-    else steps = 1;                      // Far (LOD 1)
+    if (distXZ < 15.0) steps = 10;       // Near (LOD 3)
+    else if (distXZ < 45.0) steps = 5;   // Mid (LOD 2)
+    else if (distXZ < 75.0) steps = 1;   // Far (LOD 1)
+    else steps = 0;                       // Very Far (LOD 1)
 
     float invSteps = 1.0 / float(steps);
     float waveTime = time * 0.01;
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 10; i++) {
         if (i >= steps) break; // Only process up to chosen LOD steps
 
         float stepRatio = float(i) * invSteps;

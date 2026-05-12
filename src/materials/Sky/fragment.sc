@@ -74,9 +74,9 @@ void main() {
     #ifdef FALLING_STARS 
       if(!env.underwater){
         vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
-        float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w);
+        float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w)*smoothstep(0.0, 0.3, viewDir.y);
         vec3 starColor = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
-        float starFactor     = smoothstep(0.67, 1.0, night)*(1.0-rain);
+        float starFactor = smoothstep(0.67, 1.0, night)*(1.0-rain);
         starColor     *= starFactor;
         skyColor += starColor;
       }

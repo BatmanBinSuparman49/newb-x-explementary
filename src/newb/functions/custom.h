@@ -6,6 +6,8 @@
 #include "PBR.h"
 #include "clouds.h"
 
+SAMPLER2D_AUTOREG(s_NoiseW);
+
 #define NL_CLOUD_PARAMS(x) NL_CLOUD2##x##STEPS, NL_CLOUD2##x##THICKNESS, NL_CLOUD2##x##RAIN_THICKNESS, NL_CLOUD2##x##VELOCITY, NL_CLOUD2##x##SCALE, NL_CLOUD2##x##DENSITY, NL_CLOUD2##x##SHAPE
 
 float fogtime(vec4 fogcol) {
@@ -47,8 +49,10 @@ highp float getWave(highp vec2 uv, float time){
     uv *= 1.5;
     uv = mul(uv, rotMat(80.0));
 
-    float A = sin(noise(t+uv-sin(uv.y*0.2)+uv.x)) * 0.5;
-    float B = cos(noise(-t+uv+cos(uv.y*0.2)+uv.x)) * 0.5;
+    float scale = 1.0 / 64.0;
+
+    float A = sin(texture2D(s_NoiseW, (t+uv-sin(uv.y*0.4)+uv.x) * scale).r) * 0.5;
+    float B = cos(texture2D(s_NoiseW, (-t+uv+cos(uv.y*0.3)+uv.x) * scale).r) * 0.5;
     return saturate(A + B);
 }
 
@@ -95,11 +99,6 @@ vec4 applyWaterEffect(
     vec3 normal = mul(wnormal, TBN);
 
     vec3 reflDir = reflect(viewDir, normal);
-
-    float glossstrength = 0.5;
-
-    vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
-    vec3 specular = brdf(L, V, 0.22, normal, diffuse.rgb, 0.0, F0, vec3(1.0, 1.0, 1.0));
 
     vec2 cloudPos = 3.0 * reflDir.xz / max(reflDir.y, 0.05);
 

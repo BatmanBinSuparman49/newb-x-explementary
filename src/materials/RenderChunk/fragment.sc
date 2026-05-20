@@ -272,13 +272,13 @@ void main() {
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
   // specular highlights 
-  float specDist = FogAndDistanceControl.z*0.67;
+  /* float specDist = FogAndDistanceControl.z*0.67;
     if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && !blockUnderWater && isLeaf==0.0){
       vec3 specHighlights = brdf_specular(normalize(SunMoonDir), V, worldNormal, 0.65, F0, specularCol);
       specHighlights     *= (1.0-sideshadow);
       specHighlights     *= (1.0-shadow);
-      diffuse.rgb += specHighlights;
-    } 
+      // diffuse.rgb += specHighlights;
+    } */
 
   float downwards = max(-N.y, 0.0);
   float notBottom = 1.0 - downwards;

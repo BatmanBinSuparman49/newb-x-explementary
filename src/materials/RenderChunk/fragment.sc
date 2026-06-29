@@ -139,7 +139,7 @@ void main() {
 
   bool water = v_extra.b > 0.9;
 
-  /* bool reflective = false;
+  bool reflective = false;
 
     const vec3 Ambient = vec3(0.02, 0.04, 0.08);
     bool isCave = nolight > 0.3;
@@ -149,7 +149,7 @@ void main() {
  if(detecttexture){
     reflective = true;
         }
- #endif */
+ #endif
 
  #if !defined(TRANSPARENT) && !defined(ALPHA_TEST) 
  #endif
@@ -205,6 +205,8 @@ void main() {
   vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*smoothstep(0.0, 0.7, night); 
   if (env.underwater) specularCol = mix(vec3(0.1, 0.25, 0.5), specularCol, 0.67);
 
+
+  vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, 0.5);
   vec3 specular = brdf(normalize(SunMoonDir), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
   float fresnel = pow(1.0 - dot(V, worldNormal), 5.0); 
   viewDir = reflect(viewDir, worldNormal);

@@ -8,6 +8,7 @@ $output v_color0, v_fog, v_light, v_glintuv
 #include <bgfx_shader.sh>
 #include <MinecraftRenderer.Materials/TAAUtil.dragonh>
 #include <MinecraftRenderer.Materials/GlintUtil.dragonh>
+#include <MinecraftRenderer.Materials/DynamicUtil.dragonh>
 #include <newb/main.sh>
 
 uniform vec4 FogControl;
@@ -51,7 +52,16 @@ void main() {
       fogColor.rgb = colorCorrectionInv(FogColor.rgb);
     }
 
-    vec3 light = nlEntityLighting(env, a_position, a_normal, World, TileLightColor, OverlayColor, skycol.horizonEdge, ViewPositionAndTime.w);
+    vec3 light;    
+
+    float intensity = calculateLightIntensity(World, vec4(a_normal.xyz, 0.0), TileLightColor);
+    intensity      += OverlayColor.a * 0.35;
+
+    #ifdef NL_FULLBRIGHT
+      light = vec3_splat(intensity);
+    #else 
+      light = nlEntityLighting(env, a_position, a_normal, World, TileLightColor, OverlayColor, skycol.horizonEdge, ViewPositionAndTime.w);
+    #endif
 
     vec4 glintuv;
     glintuv.xy = calculateLayerUV(texcoord0, UVAnimation.x, UVAnimation.z, UVScale.xy);

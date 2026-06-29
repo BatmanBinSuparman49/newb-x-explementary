@@ -9,9 +9,7 @@
 
 // fresnel - Schlick's approximation
 float calculateFresnel(float cosR, float r0) {
-  float a = 1.0-cosR;
-  float a2 = a*a;
-  return r0 + (1.0-r0)*a2*a2*a;
+    return r0 + (1.0 - r0) * pow(1.0 - cosR, 5.0);
 }
 
 vec4 nlWater(

@@ -60,7 +60,11 @@ void main() {
     light.rgb = max(light.rgb, 2.0*NL_GLOW_TEX*(1.0-albedo.a)); // glow effect
   #endif
 
-  albedo = applyLighting(albedo, light);
+  #ifdef NL_FULLBRIGHT
+    albedo = applyActorDiffuse(albedo, v_color0.rgb, v_light, ColorBased.x, OverlayColor);
+  #else
+    albedo = applyLighting(albedo, light);
+  #endif
 
   #ifdef TRANSPARENT
     albedo = applyHudOpacity(albedo, HudOpacity.x);

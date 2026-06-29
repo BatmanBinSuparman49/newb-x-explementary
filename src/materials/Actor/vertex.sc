@@ -55,7 +55,16 @@ void main() {
       fogColor.rgb = colorCorrectionInv(FogColor.rgb);
     }
 
-    vec3 light = nlEntityLighting(env, a_position, a_normal, World, TileLightColor, OverlayColor, skycol.horizonEdge, ViewPositionAndTime.w);
+    vec3 light;
+
+    float intensity = calculateLightIntensity(World, vec4(a_normal.xyz, 0.0), TileLightColor);
+    intensity += OverlayColor.a * 0.35;
+
+    #ifdef NL_FULLBRIGHT
+      light = vec3(intensity, intensity, intensity);
+    #else 
+      light = nlEntityLighting(env, a_position, a_normal, World, TileLightColor, OverlayColor, skycol.horizonEdge, ViewPositionAndTime.w);
+    #endif
 
     v_texcoord0 = texcoord0;
     v_color0 = a_color0;

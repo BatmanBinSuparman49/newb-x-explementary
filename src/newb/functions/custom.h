@@ -5,6 +5,7 @@
 #include "galaxy.h"
 #include "PBR.h"
 #include "clouds.h"
+#include "water.h"
 
 SAMPLER2D_AUTOREG(s_NoiseW);
 
@@ -25,7 +26,7 @@ mat2 rotMat(float a){
 // Water Noise & Wave Starts from this Random Function
 float randW(vec2 co)
 {
- return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+ return fract(sin(dot(co ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
 float noise(vec2 p)
@@ -44,16 +45,14 @@ float noise(vec2 p)
 highp float getWave(highp vec2 uv, float time){
     float t = -time*1.0;
 
-    float tiles = 16.0;
-
     uv *= 1.5;
-    uv = mul(uv, rotMat(80.0));
+    uv = mul(uv, mat2(0.173648, 0.984808, -0.984808, 0.173648));
 
-    float scale = 1.0 / 64.0;
+    // float scale = 1.0 / 16.0;
 
-    float A = sin(texture2D(s_NoiseW, (t+uv-sin(uv.y*0.4)+uv.x) * scale).r) * 0.5;
-    float B = cos(texture2D(s_NoiseW, (-t+uv+cos(uv.y*0.3)+uv.x) * scale).r) * 0.5;
-    return saturate(A + B);
+    return saturate(noise(t+uv-(uv.y*0.4)+uv.x)*0.5) * 0.03;
+    // float B = (texture2D(s_NoiseW, (-t+uv+(uv.y*0.3)+uv.x) * scale).r) * 0.5;
+    // return saturate(A);// + B);
 }
 
 float getWaterHeight(vec2 uv, float time) {
@@ -63,9 +62,9 @@ float getWaterHeight(vec2 uv, float time) {
 
 vec3 getWaterNormal(vec2 uv, float t) {
     float eps = 0.005;
-    float h  = getWaterHeight(uv, t);
-    float hx = getWaterHeight(uv + vec2(eps, 0.0), t);
-    float hy = getWaterHeight(uv + vec2(0.0, eps), t);
+    float h  = getWave(uv, t);
+    float hx = getWave(uv + vec2(eps, 0.0), t);
+    float hy = getWave(uv + vec2(0.0, eps), t);
 
     float dx = (hx - h) / eps;
     float dy = (hy - h) / eps;
@@ -83,39 +82,23 @@ vec4 timedetection(vec4 FogColor,vec4 FogAndDistanceControl){
 }
 
 vec4 applyWaterEffect(
-    sampler2D cloudTex, vec3 v_pos, vec3 v_wpos, vec3 viewDir, vec3 V, vec3 L, vec3 texcol,
-    vec4 diffuse, vec4 reflectionColor, 
+    sampler2D cloudTex, vec3 v_pos, vec3 v_wpos, vec3 viewDir, vec3 V, vec4 diffuse,
     nl_skycolor skycol, nl_environment  env, vec3 FogColor,
-    float time, float night, float dusk, float dawn, float rain, float nolight,
-    bool isCave, bool water, float FogAndDistanceControl, float camDist, vec3 sunDir, vec3 N, vec2 CameraPosition
+    float time, float night, float dusk, float dawn, float rain,
+    bool water, float lm, vec3 sunDir, vec3 N
 ) {
     if (!water) return diffuse;
-
-    float endDist = FogAndDistanceControl*0.8;
-    bool doEffect = (camDist < endDist);
 
     vec3 wnormal = getWaterNormal(v_pos.xz, time).xyz;
     mat3 TBN = getTBN(N);
     vec3 normal = mul(wnormal, TBN);
 
     vec3 reflDir = reflect(viewDir, normal);
-
-    vec2 cloudPos = 3.0 * reflDir.xz / max(reflDir.y, 0.05);
-
-    vec3 roundPos;
-    roundPos.xz = 56.0 * reflDir.xz/max(reflDir.y, 0.05);
-    roundPos.y = 1.0;
     
     vec4 aurora = rdAurora(reflect(v_wpos, normal) * 0.0001, reflDir, env, time, vec3(0.0,0.0,0.0), 0.0);
-    vec4 clouds = renderClouds(cloudPos, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,
-                               NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
-
-    vec4 v_color1 = vec4(skycol.zenith, rain);
-    vec4 v_color2 = vec4(skycol.horizonEdge, time);
-    vec4 roundedC = renderCloudsRounded(cloudTex, reflDir, roundPos, v_color1.w, v_color2.w, v_color2.rgb, v_color1.rgb, NL_CLOUD_PARAMS(_));
 
     vec3 sun = sunS(sunDir, reflDir, dusk, dawn);
-    sun *= exp(min(reflDir.y, 0.0) * 100.0);
+    // sun *= exp(min(reflDir.y, 0.0) * 100.0);
     sun *= (1.0-night);
 
     vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7))*smoothstep(0.0, 0.7, night);
@@ -123,53 +106,49 @@ vec4 applyWaterEffect(
 
     vec3 stars = vec3(0.0, 0.0, 0.0);
 
-    #ifdef FALLING_STARS
-    if(!env.underwater) {
-        vec2 starUV = reflDir.xz / (0.5 + reflDir.y);
-        float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, time);
-        float starFactor = smoothstep(0.67, 1.0, night)*(1.0-rain);
-        stars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
-        stars *= starFactor;
-    }
-    #endif
+    vec2 starUV = reflDir.xz / (0.5 + reflDir.y);
+    float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, time);
+    float starFactor = smoothstep(0.67, 1.0, night)*(1.0-rain);
+    stars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
+    stars *= starFactor;
 
-    #ifdef NL_GALAXY_STARS
-        vec3 GalaxyStars = nlGalaxy(reflDir, FogColor, env, time);
-        stars += NL_GALAXY_STARS * GalaxyStars;
-    #endif
-
-    float NdotV = dot(normal, V);
-    float fresnel = calculateFresnel(NdotV, 1.2);
-    float blend = mix(0.04, 1.0, fresnel);
+    vec3 GalaxyStars = nlGalaxy(reflDir, FogColor, env, time);
+    stars += NL_GALAXY_STARS * GalaxyStars;
 
     vec3 skyReflection = getSkyRefl(skycol, env, reflDir, FogColor.rgb, time);
     diffuse.rgb = mix(diffuse.rgb, skyReflection, 1.0);
 
-
-    reflectionColor.rgb = mix(vec3(0.02, 0.03, 0.04), reflectionColor.rgb, blend);
     vec3 reflections;
+    vec3 roundPos;
     #if NL_CLOUD_TYPE == 2
-        reflections = mix(diffuse.rgb, roundedC.rgb * 0.4, 0.688 * roundedC.a * (1.0 - nolight));
+        roundPos.xz = 56.0 * reflDir.xz/max(reflDir.y, 0.05);
+        roundPos.y = 1.0;
+        vec4 roundedC = renderCloudsRounded(cloudTex, reflDir, roundPos, rain, time, skycol.horizonEdge, skycol.zenith, NL_CLOUD_PARAMS(_));
+        reflections = mix(diffuse.rgb, roundedC.rgb * 0.4, 0.688 * roundedC.a);
     #else 
-        reflections = mix(diffuse.rgb, clouds.rgb * 0.4, 0.688 * clouds.a * (1.0 - nolight));
+        vec2 cloudPos = 3.0 * reflDir.xz / max(reflDir.y, 0.05);
+        vec4 clouds = renderClouds(cloudPos, 0.1 * time, rain, skycol.horizonEdge, skycol.zenith,NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
+        reflections = mix(diffuse.rgb, clouds.rgb * 0.4, 0.688 * clouds.a);
     #endif
     
     reflections += stars;
 
-    float luma = dot(reflectionColor.rgb, vec3(0.299, 0.587, 0.114));
-    float brightness = pow(clamp(luma * 1.8, 0.0, 1.0), mix(1.0, 2.5, 1.0 - FogColor.b));
+    // bool flatWater = v_pos.y < 0.0;
 
-    bool flatWater = v_wpos.y < 0.0;
+    float NdotV = clamp(dot(normal, V), 0.0, 1.0);
+    float fresnel = ( 0.2 + (1.0-0.2) * pow(1.0-NdotV, 5.0) ) * lm;
 
-    if (!env.end && flatWater) {
-        diffuse.rgb += reflections * fresnel;
-        diffuse.a = mix(diffuse.a * 0.75, 1.0, pow(1.0 - NdotV, 2.0));
-        if(doEffect){
-            #ifdef LYNX_AURORA
-                    diffuse.rgb += aurora.rgb * aurora.a * smoothstep(0.67, 1.0, night) * (1.0-rain);
-            #endif
-        }
+    if (!env.end){ 
+        diffuse.rgb = mix(diffuse.rgb, reflections, fresnel);
+        diffuse.rgb += aurora.rgb * aurora.a * smoothstep(0.9, 1.0, night) * (1.0-rain);
     }
+
+    #ifdef NL_FULLBRIGHT
+        diffuse.a = mix(diffuse.a*1.2, 1.0, saturate(fresnel));
+    #endif
+    
+    diffuse.a = mix(diffuse.a*0.8, 1.0, saturate(fresnel));
+
     if(!env.end && !env.nether){
         diffuse.rgb += sun;
         diffuse.rgb += moon;

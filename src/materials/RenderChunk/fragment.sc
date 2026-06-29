@@ -48,7 +48,7 @@ highp float E_UNDW(vec3 v_position, vec2 v_uv1) {
   float colour = clamp(pow(abs(c), 8.0), 0.0, 0.7 ) * ( v_uv1.y + 0.1 ) * ( 1.0 - v_uv1.x ) * 3.1;
   return colour;
 }
-
+/*
 // Rain ripples
 #define rot(x) mat2(cos(x), sin(x), -sin(x), cos(x))
 
@@ -66,7 +66,7 @@ highp float ripple(highp vec2 x,float time){
   highp float result = 0.0;
 
     for(int i = 0; i<3; i++){
-    x -= 6.0, x = mul(x, rot(0.3333)),
+    x -= 6.0, x = mul(x, mat2(0.94497, 0.32716, -0.32716, 0.94497)),
     result += ripplenoise(x+time*0.5,float(i)/3.0+1.0);
   }
 
@@ -87,7 +87,7 @@ highp vec3 norm(highp vec2 x, float time) {
 
   return (vec3(r+0.5,g+0.5,b*m+1.0));
 }
-
+*/
 vec3 filmicBSBE(vec3 x){
     return (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);
 }
@@ -105,24 +105,21 @@ void main() {
   float camDist = v_wpos.w;
   vec3 viewDir = normalize(v_wpos.xyz);
 
-  
-  float endDist = FogAndDistanceControl.z*0.9;
-  bool doEffect = (camDist < endDist);
-
-    vec4 gametime = timedetection(FogColor,FogAndDistanceControl);
-    float day1 = gametime.x,
-        night1 = gametime.y,
-        dusk1 = gametime.z,
-        rain1 = gametime.w;
-
     vec4 whatTime = timeofday(TimeOfDay.x);
       float night = whatTime.x;
       float day   = whatTime.w;
       float dusk  = whatTime.z;
       float dawn  = whatTime.y;
 
-    float weatherFactor = WeatherID.x; 
     float rain          = clamp(WeatherID.x, 0.0, 1.0);
+
+  nl_environment env = nlDetectEnvironment(FogColor.rgb, FogAndDistanceControl.xyz);
+  nl_skycolor skycol;
+  if (env.underwater) {
+     skycol = nlUnderwaterSkyColors(env.rainFactor, FogColor.rgb);
+    } else {
+     skycol = nlOverworldSkyColors(env.rainFactor,FogColor.rgb);
+    }
     
   vec4 color = v_color0;
 
@@ -130,13 +127,11 @@ void main() {
   float nolight = 1.0 - lit.y;
   
   //sun angle
-  float a = radians(45.0);
-  vec3 sunVector = normalize(vec3(cos(a), sin(a), 0.2));
-  vec3 L = sunVector;
   vec3 V = normalize(-viewDir);
   vec3 N = normalize(cross(dFdx(v_position), dFdy(v_position)));
   vec3 sunDir = normalize(SunDirection.xyz);
-  vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * smoothstep(0.0, 0.7, night*night);
+  vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * smoothstep(0.0, 0.8, night*night);
+  vec3 SunMoonDir = mix(sunDir, moonDir, smoothstep(0.0, 0.8, night*night));
   
   vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
@@ -144,12 +139,7 @@ void main() {
 
   bool water = v_extra.b > 0.9;
 
-    bool reflective = false,
-       leaf = false,
-       grass =  false,
-       transparent = false,
-       soultorch = false,
-       slightly = false;
+  /* bool reflective = false;
 
     const vec3 Ambient = vec3(0.02, 0.04, 0.08);
     bool isCave = nolight > 0.3;
@@ -159,18 +149,10 @@ void main() {
  if(detecttexture){
     reflective = true;
         }
- #endif
+ #endif */
 
  #if !defined(TRANSPARENT) && !defined(ALPHA_TEST) 
  #endif
-
-  nl_environment env = nlDetectEnvironment(FogColor.rgb, FogAndDistanceControl.xyz);
-  nl_skycolor skycol;
-  if (env.underwater) {
-     skycol = nlUnderwaterSkyColors(env.rainFactor, FogColor.rgb);
-    } else {
-     skycol = nlOverworldSkyColors(env.rainFactor,FogColor.rgb);
-    }
 
   float shadow = smoothstep(0.875,0.860, pow(v_lightmapUV.y,2.0));
   shadow = mix(shadow, 0.0, pow(v_lightmapUV.x * 1.2, 6.0)); 
@@ -191,149 +173,95 @@ void main() {
   diffuse.rgb *= diffuse.rgb;
  
   vec3 lightTint = texture2D(s_LightMapTexture, v_lightmapUV).rgb;
-  lightTint = mix(lightTint.bbb, lightTint*lightTint, 0.35 + 0.65*v_lightmapUV.y*v_lightmapUV.y*v_lightmapUV.y);
+  // lightTint = mix(lightTint.bbb, lightTint*lightTint, 0.35 + 0.65*v_lightmapUV.y*v_lightmapUV.y*v_lightmapUV.y);
 
-  color.rgb *= lightTint;
+  #ifndef NL_FULLBRIGHT
+    diffuse.rgb *= lightTint;
+  #endif
 
   float isLeaf = 0.0;
   #if defined(SEASONS) && (defined(ALPHA_TEST) || defined(OPAQUE))
     isLeaf = 1.0;
   #endif
 
-  diffuse.rgb *= color.rgb;
+  diffuse.rgb *= color.rgb;   // point light & other things
   diffuse.rgb += glow;
 
-  bool blockUnderWater = (v_lightmapUV.y < 0.9 && abs((2.0 * v_position.y - 15.0) / 16.0 - v_lightmapUV.y) < 0.00002);
-  float causticDist = FogAndDistanceControl.z*0.5;
-  bool doCaustics = (camDist < causticDist);
-
   // Caustics
-  if(doCaustics){
-    if (env.underwater || blockUnderWater){
+    if (env.underwater){
       float upwards = max(N.y, 0.0);
-      float caustics = E_UNDW(realPos, v_lightmapUV);
-      caustics *= upwards;
-      diffuse += caustics;
-    
-      vec3 watercol = vec3(1.0, 1.0, 1.0);
-      diffuse.rgb *= watercol;
+      vec3 caustics = (E_UNDW(realPos, v_lightmapUV)*vec3(0.75, 0.8, 1.0))*upwards;
+      diffuse.rgb *= caustics;
     }
-  }
+
   // water 
-  diffuse = applyWaterEffect(s_CloudTexture, realPos, v_wpos.xyz, viewDir, V, L, texcol.rgb, diffuse, vec4(0,0,0,0), skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain1, nolight, isCave, water, FogAndDistanceControl.z, camDist, sunDir, N, CameraPosition.xz);
+  diffuse = applyWaterEffect(s_CloudTexture, realPos, v_wpos.xyz, viewDir, V, diffuse, skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, water, v_lightmapUV.y, sunDir, N);
 
-  // water absorption
-  float depth = 1.0 - pow(v_lightmapUV.y,2.0);
-  vec3 absorption;
-  bool fromSurface = v_lightmapUV.y < 0.9 ;
-
-  vec3 absorptionCoeff = vec3(2.5, 1.8, 1.2); // Red, Green, Blue
-  absorption = exp(-depth * absorptionCoeff);
-   
-  if(water){
-    diffuse.rgb *= absorption;
-  }
-
-  if(water){
-    float fogDensity = depth * 0.5;
-    float visibility = exp(-fogDensity);
-    diffuse.a *= 0.4 + (visibility * 0.5);
-  }
-
-  vec3 dawnCol = vec3(1.0, 0.52, 0.278);
+  /* vec3 dawnCol = vec3(1.0, 0.52, 0.278);
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 
   vec3 dayCol  = vec3_splat(1.0);
   float twilight = saturate(dusk + dawn);
-  vec3 SunMoonDir = mix(sunDir, moonDir, smoothstep(0.0, 0.8, night*night));
   vec3 specularCol = dawnCol*twilight + dayCol*day + nightCol*smoothstep(0.0, 0.7, night); 
-
-  float glossstrength = 0.5;
-  vec3 F0 = mix(vec3(0.04, 0.04, 0.04), texcol.rgb, glossstrength);
+  if (env.underwater) specularCol = mix(vec3(0.1, 0.25, 0.5), specularCol, 0.67);
 
   vec3 specular = brdf(normalize(SunMoonDir), V, 0.2, worldNormal, diffuse.rgb, 0.0, F0, specularCol);
-  float fresnel = pow(1.0 - dot(V, worldNormal), 3.0); 
+  float fresnel = pow(1.0 - dot(V, worldNormal), 5.0); 
   viewDir = reflect(viewDir, worldNormal);
   
-  vec3 cloudPos = v_wpos.xyz;
-  cloudPos.xz = 3.0 * viewDir.xz / viewDir.y;
-  
-  vec3 p = normalize(v_wpos.xyz); 
-
   // firmaments declarations for using in reflections  
   vec3 skyReflection = getSkyRefl(skycol, env, viewDir, FogColor.rgb, ViewPositionAndTime.w);
-
-  vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain1, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
-
-  vec3 roundPos;
-  roundPos.xz = 56.0 * viewDir.xz/max(viewDir.y, 0.05);
-  roundPos.y = 1.0;
-  vec4 roundedC = renderCloudsRounded(s_CloudTexture, viewDir, roundPos, rain, ViewPositionAndTime.w, skycol.horizonEdge, skycol.zenith, NL_CLOUD_PARAMS(_));
 
   vec3 galaxyStars = nlGalaxy(viewDir, FogColor.rgb, env, ViewPositionAndTime.w);
 
   // specular highlights 
-  /* float specDist = FogAndDistanceControl.z*0.67;
-    if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && !blockUnderWater && isLeaf==0.0){
+  float specDist = FogAndDistanceControl.z*0.67;
+    if(!env.end && !env.nether && v_extra.b<0.9 && !reflective && isLeaf==0.0){
       vec3 specHighlights = brdf_specular(normalize(SunMoonDir), V, worldNormal, 0.65, F0, specularCol);
-      specHighlights     *= (1.0-sideshadow);
-      specHighlights     *= (1.0-shadow);
-      // diffuse.rgb += specHighlights;
-    } */
+      diffuse.rgb += specHighlights;
+    }
 
   float downwards = max(-N.y, 0.0);
   float notBottom = 1.0 - downwards;
 
-  vec3 fstars = vec3(0.0, 0.0, 0.0);
-  if(!env.end && !env.nether){
-  #ifdef FALLING_STARS
-    if(!env.underwater) {
-        vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
-        float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w);
-        float starFactor = smoothstep(0.67, 1.0, night)*(1.0-rain);
-        fstars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
-        fstars *= starFactor;
-    }
-  #endif
+  vec3 stars;
+
+  if(DimensionID.x == 0.0){
+    vec3 fstars = vec3(0.0, 0.0, 0.0);
+    vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
+    float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w);
+    float starFactor = smoothstep(0.67, 1.0, night)*(1.0-rain);
+    fstars = pow(vec3(starValue, starValue, starValue) * 1.1, vec3(16.0, 6.0, 4.0));
+    fstars *= starFactor;
+    
+    vec3 gstars = NL_GALAXY_STARS * galaxyStars;
+    gstars *= gstars;
+    stars = (gstars * 2.1 * notBottom) + (fstars*0.7);
+  } else {
+    stars = renderStarfield(viewDir, ViewPositionAndTime.w) * 0.5; 
   }
-  
-  vec3 stars = vec3(0.0, 0.0, 0.0);
-  if(!env.end && !env.nether){
-    #ifdef NL_GALAXY_STARS
-      stars += NL_GALAXY_STARS * galaxyStars;
-      stars *= stars;
-    #endif
-  }
-   
+
+  vec3 cloudPos;
+
   vec3 reflection = skyReflection*0.8;
-  if(!env.end && !env.nether){
     #if NL_CLOUD_TYPE == 3
-      reflection = mix(skyReflection*0.8, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
-    #else 
-      reflection = mix(skyReflection*0.8, roundedC.rgb, roundedC.a * smoothstep(0.05,1.0,viewDir.y));
+      cloudPos.xz = 3.0 * viewDir.xz / viewDir.y;
+      vec4 clouds = renderClouds(cloudPos.xz, 0.1 * ViewPositionAndTime.w, rain, skycol.horizonEdge, skycol.zenith, NL_CLOUD3_SCALE, NL_CLOUD3_SPEED, NL_CLOUD3_SHADOW);
+      reflection = mix(reflection, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
+    #else
+      cloudPos.xz = 36.0 * viewDir.xz/max(viewDir.y, 0.05);
+      cloudPos.y = 1.0*viewDir.y;
+      vec4 clouds = renderCloudsRounded(s_CloudTexture, viewDir, cloudPos, rain, ViewPositionAndTime.w, skycol.horizonEdge, skycol.zenith, NL_CLOUD_PARAMS(_)); 
     #endif 
-  }
-
-  vec3 endstars = vec3(0.0, 0.0, 0.0);
-  if(env.end){
-    #ifdef STARFIELD
-      endstars += renderStarfield(viewDir, ViewPositionAndTime.w) * 0.5;
-      reflection += endstars; 
-    #endif
-  }
   
-  if(doEffect){
-    if(reflective && !water){
-      diffuse.rgb += stars * 2.1 * notBottom;
-    }
-  } 
+  if(DimensionID.x == 0.0) reflection = mix(reflection*0.8, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
 
-  if(reflective && !water){
-    reflection  += fstars * 0.7;
+  if(reflective && !water && !env.nether){
+    reflection  += stars;
     diffuse.rgb *= 1.0 - F0;
     float notDown = diffuse.a * fresnel * notBottom;
     diffuse.rgb = mix(diffuse.rgb, reflection, notDown);
     diffuse.rgb += specular * notBottom; 
-  }
+  } */
 
   diffuse.rgb = mix(diffuse.rgb, v_fog.rgb, v_fog.a);
 

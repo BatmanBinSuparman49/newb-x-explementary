@@ -23,7 +23,7 @@ You can compile the shader from source and distribute the result under your own 
 Contact (Discord Server): https://discord.gg/newb-community-844591537430069279
 ''' # %a = authors
 credits = '''
-Contributors/helpers - LynxiumMC
+Contributors: LynxiumMC
 Assets by devendrn and Ale Graphics
 '''
 
@@ -31,45 +31,17 @@ Assets by devendrn and Ale Graphics
 # right-most subpack is enabled by default
 
 [[subpack]]
-define = "NO_WAVE_NO_FOG"
-materials = ["RenderChunk"]
+define = "FULLBRIGHT"
+materials = ["Actor", "ItemInHandColor", "ItemInHandColorGlint", "ItemInHandTextured", "RenderChunk"]
 description = '''
-Removes both fog and wave
+FullBright 
 '''
 
 [[subpack]]
-define = "NO_FOG"
-materials = ["RenderChunk"]
-description = '''
-Removes fog
-'''
-
-[[subpack]]
-define = "NO_WAVE"
-materials = ["RenderChunk"]
-description = '''
-Removes wave
-'''
-
-[[subpack]]
-define = "NO_SHOOTING_STARS"
-materials = ["Sky"]
-description = '''
-Removes shooting stars 
-'''
-
-[[subpack]]
-define = "ROUNDED_CLOUDS"
+define = "REALISTIC_CLOUDS"
 materials = ["Clouds", "RenderChunk"]
 description = '''
-Rounded Complementary style clouds
-'''
-
-[[subpack]]
-define = "NO_AURORA"
-materials = ["Sky"]
-description = '''
-Removes Aurora
+Realistic Newb Clouds
 '''
 
 [[subpack]]

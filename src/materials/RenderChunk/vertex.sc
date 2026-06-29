@@ -60,6 +60,8 @@ void main() {
 
   float relativeDist = camDis / FogAndDistanceControl.z;
 
+
+  vec3 gPos = worldPos.xyz + CameraPosition.xyz;
   vec3 cPos = a_position.xyz;
   vec3 bPos = fract(cPos);
   vec3 tiledCpos = fract(cPos*0.0625);
@@ -167,21 +169,24 @@ void main() {
     float shimmer = 1.0;
   #endif
 
+  vec2 uv0 = 2.0*a_texcoord0.xy;
+  uv0 = fract(uv0) + ((floor(uv0)-0.5)/16384.0);
+
   #ifdef NL_LAVA_NOISE
     bool isc = (a_color0.r+a_color0.g+a_color0.b) > 2.999;
     bool isb = bPos.y < 0.891 && bPos.y > 0.889;
-    if (isc && isb && (uv1.x > 0.81 && uv1.x < 0.876) && a_texcoord0.y > 0.45) {
-      vec3 lava = nlLavaNoise(tiledCpos, t);
+    if (isc && isb && (uv1.x > 0.81 && uv1.x < 0.876) && uv0.y > 0.5) {
+      vec4 lava = nlLavaNoise(gPos, t);
       #ifdef NL_LAVA_NOISE_BUMP
-        worldPos.y += NL_LAVA_NOISE_BUMP*lava.r;
+        worldPos.y += NL_LAVA_NOISE_BUMP*lava.a;
       #endif
-      color.rgb *= lava;
+      color.rgb *= lava.rgb;
     }
   #endif
 
   v_extra = vec4(shade, worldPos.y, water, shimmer);
   v_refl = refl;
-  v_texcoord0 = a_texcoord0;
+  v_texcoord0 = uv0;
   v_lightmapUV = uv1;
   v_color0 = color;
   v_color1 = a_color0;

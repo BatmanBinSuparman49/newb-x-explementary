@@ -66,7 +66,7 @@ void main() {
 
     #ifdef LYNX_AURORA
       if(!env.underwater){
-        vec4 aurora = rdAurora(v_worldPos*0.001, viewDir, env, v_underwaterRainTimeDay.z, vec3(0.0,0.0,0.0), 0.0)*smoothstep(0.67, 1.0, night)*(1.0-rain);
+        vec4 aurora = rdAurora(v_worldPos*0.001, viewDir, env, v_underwaterRainTimeDay.z, vec3(0.0,0.0,0.0), 0.0)*smoothstep(0.9, 1.0, night)*(1.0-rain);
         skyColor += mix(skyColor, aurora.rgb*1.5, aurora.a);
       }
     #endif

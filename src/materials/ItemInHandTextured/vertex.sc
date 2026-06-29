@@ -7,6 +7,7 @@ $output v_color0, v_fog, v_light, v_texcoord0, v_edgemap
 
 #include <bgfx_shader.sh>
 #include <MinecraftRenderer.Materials/TAAUtil.dragonh>
+#include <MinecraftRenderer.Materials/DynamicUtil.dragonh>
 #include <newb/main.sh>
 
 uniform vec4 FogControl;
@@ -48,9 +49,21 @@ void main() {
       fogColor.rgb = colorCorrectionInv(FogColor.rgb);
     }
 
-    vec3 light = nlEntityLighting(env, a_position, a_normal, World, TileLightColor, OverlayColor, skycol.horizonEdge, ViewPositionAndTime.w);
+    vec3 light;    
 
-    v_texcoord0 = texcoord0;
+    float intensity = calculateLightIntensity(World, vec4(a_normal.xyz, 0.0), TileLightColor);
+    intensity      += OverlayColor.a * 0.35;
+
+    #ifdef NL_FULLBRIGHT
+      light = vec3_splat(intensity);
+    #else 
+      light = nlEntityLighting(env, a_position, a_normal, World, TileLightColor, OverlayColor, skycol.horizonEdge, ViewPositionAndTime.w);
+    #endif
+
+    vec2 uv0 = 2.0*a_texcoord0.xy;
+    uv0 = fract(uv0) + ((floor(uv0)-0.5)/16384.0);
+
+    v_texcoord0 = uv0;
     v_color0 = a_color0;
     v_fog = fogColor;
     v_edgemap = nlEntityEdgeHighlightPreprocess(texcoord0);

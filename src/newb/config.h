@@ -232,55 +232,21 @@
   Build tool will enable corresponding flags when compiling. 
 */
 
-#ifdef NO_WAVE_NO_FOG
-  #define NO_WAVE
-  #define NO_FOG
-#endif
-
-
-#ifdef NO_FOG
-  #undef NL_FOG
-#endif
-
-
-#ifdef NO_WAVE
-  #undef NL_PLANTS_WAVE
-  #undef NL_LANTERN_WAVE
-  #undef NL_UNDERWATER_WAVE
-  #undef NL_WATER_WAVE
-  #undef NL_RAIN_MIST_OPACITY
-#endif 
 
 #ifdef NO_CHUNK_ANIM
   #undef NL_CHUNK_LOAD_ANIM
 #endif
 
-#ifdef ROUNDED_CLOUDS
+#ifdef FULLBRIGHT
+  #define NL_FULLBRIGHT
+#endif 
+
+#ifdef REALISTIC_CLOUDS
   #undef NL_CLOUD_TYPE
-  #define NL_CLOUD_TYPE 2
+  #define NL_CLOUD_TYPE 3
 #endif
 
-#ifdef NO_SHOOTING_STARS
-  #undef falling_stars
-#endif
-
-#ifdef NO_AURORA
-  #undef NL_AURORA
-  #undef NL_AURORA_VELOCITY
-  #undef NL_AURORA_SCALE
-  #undef NL_AURORA_WIDTH
-  #undef NL_AURORA_COL1
-  #undef NL_AURORA_COL2
-  #undef LYNX_AURORA
-#endif
-
-#ifdef NEWB_AURORA
-  #undef LYNX_AURORA
-  #define NL_AURORA
-#endif
-
-#endif
-
+#endif 
 /*
 materials = ["Actor", "Sky", "RenderChunk", "EndSky", "Clouds", "SunMoon", "Weather", "ItemInHandTextured", "ItemInHandColor", "Stars"]
 [[subpack]]

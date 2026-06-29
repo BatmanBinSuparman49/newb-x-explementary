@@ -31,6 +31,13 @@ Assets by devendrn and Ale Graphics
 # right-most subpack is enabled by default
 
 [[subpack]]
+define = "NO_CHUNK_ANIM"
+materials = ["RenderChunk"]
+description = '''
+Remove Chunk loading animation
+'''
+
+[[subpack]]
 define = "FULLBRIGHT"
 materials = ["Actor", "ItemInHandColor", "ItemInHandColorGlint", "ItemInHandTextured", "RenderChunk"]
 description = '''
@@ -42,13 +49,6 @@ define = "REALISTIC_CLOUDS"
 materials = ["Clouds", "RenderChunk"]
 description = '''
 Realistic Newb Clouds
-'''
-
-[[subpack]]
-define = "NO_CHUNK_ANIM"
-materials = ["RenderChunk"]
-description = '''
-Removes Chunk loading animation
 '''
 
 [[subpack]]

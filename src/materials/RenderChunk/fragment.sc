@@ -197,7 +197,8 @@ void main() {
   // water 
   diffuse = applyWaterEffect(s_CloudTexture, realPos, v_wpos.xyz, viewDir, V, diffuse, skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, water, v_lightmapUV.y, sunDir, N);
 
-  /* vec3 dawnCol = vec3(1.0, 0.52, 0.278);
+  // /*
+  vec3 dawnCol = vec3(1.0, 0.52, 0.278);
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 
   vec3 dayCol  = vec3_splat(1.0);
   float twilight = saturate(dusk + dawn);
@@ -261,7 +262,8 @@ void main() {
     float notDown = diffuse.a * fresnel * notBottom;
     diffuse.rgb = mix(diffuse.rgb, reflection, notDown);
     diffuse.rgb += specular * notBottom; 
-  } */
+  } 
+  // */
 
   diffuse.rgb = mix(diffuse.rgb, v_fog.rgb, v_fog.a);
 

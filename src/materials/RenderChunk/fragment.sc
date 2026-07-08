@@ -134,7 +134,8 @@ void main() {
   vec3 SunMoonDir = mix(sunDir, moonDir, smoothstep(0.0, 0.8, night*night));
   bool water = v_extra.b > 0.9;
 
-  /* vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
+  // /*
+  vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
   vec3 reflectNormal = reflect(V, worldNormal);
 
@@ -148,7 +149,7 @@ void main() {
  if(detecttexture){
     reflective = true;
         } 
- #endif */
+ #endif // */
 
  #if !defined(TRANSPARENT) && !defined(ALPHA_TEST) 
  #endif
@@ -196,7 +197,7 @@ void main() {
   // water 
   diffuse = applyWaterEffect(s_CloudTexture, realPos, v_wpos.xyz, viewDir, V, diffuse, skycol, env, FogColor.rgb, ViewPositionAndTime.w, night, dusk, dawn, rain, water, v_lightmapUV.y, sunDir, N);
 
-  /*
+  // /*
   vec3 dawnCol = vec3(1.0, 0.52, 0.278);
   vec3 nightCol = vec3(0.5765, 0.584, 0.98); 
   vec3 dayCol  = vec3_splat(1.0);
@@ -264,7 +265,7 @@ void main() {
     diffuse.rgb = mix(diffuse.rgb, reflection, notDown);
     diffuse.rgb += specular * notBottom; 
   } 
-  */ 
+  // */ 
 
   diffuse.rgb = mix(diffuse.rgb, v_fog.rgb, v_fog.a);
 

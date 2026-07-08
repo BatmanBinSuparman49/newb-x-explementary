@@ -132,12 +132,11 @@ void main() {
   vec3 sunDir = normalize(SunDirection.xyz);
   vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * smoothstep(0.0, 0.8, night*night);
   vec3 SunMoonDir = mix(sunDir, moonDir, smoothstep(0.0, 0.8, night*night));
-  
-  vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
+  bool water = v_extra.b > 0.9;
+
+  /* vec3 blockNormal = getNormal(s_MatTexture, v_texcoord0);
   vec3 worldNormal = normalize(mul((blockNormal),getTBN(N)));
   vec3 reflectNormal = reflect(V, worldNormal);
-
-  bool water = v_extra.b > 0.9;
 
   bool reflective = false;
 
@@ -148,8 +147,8 @@ void main() {
  bool detecttexture = texcol.a > 0.965 && texcol.a < 0.975; 
  if(detecttexture){
     reflective = true;
-        }
- #endif
+        } 
+ #endif */
 
  #if !defined(TRANSPARENT) && !defined(ALPHA_TEST) 
  #endif
@@ -191,7 +190,7 @@ void main() {
     if (env.underwater){
       float upwards = max(N.y, 0.0);
       vec3 caustics = (E_UNDW(realPos, v_lightmapUV)*vec3(0.75, 0.8, 1.0))*upwards;
-      diffuse.rgb *= caustics;
+      diffuse.rgb += caustics;
     }
 
   // water 

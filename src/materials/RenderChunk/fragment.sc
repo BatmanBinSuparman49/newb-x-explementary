@@ -129,7 +129,8 @@ void main() {
   //sun angle
   vec3 V = normalize(-viewDir);
   vec3 N = normalize(cross(dFdx(v_position), dFdy(v_position)));
-  vec3 sunDir = normalize(SunDirection.xyz);
+  float angle =  6.283185307179586*fract(TimeOfDay.x);
+  vec3 sunDir = normalize(vec3(-sin(angle), cos(angle), 0.0));
   vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * smoothstep(0.0, 0.8, night*night);
   vec3 SunMoonDir = mix(sunDir, moonDir, smoothstep(0.0, 0.8, night*night));
   bool water = v_extra.b > 0.9;

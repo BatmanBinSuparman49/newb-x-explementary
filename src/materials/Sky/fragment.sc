@@ -31,7 +31,8 @@ void main() {
 
     float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
 
-    vec3 sunDir = normalize(SunDirection.xyz);
+    float angle =  6.283185307179586*fract(TimeOfDay.x);
+    vec3 sunDir = normalize(vec3(-sin(angle), cos(angle), 0.0));
     vec3 moonDir = normalize(vec3(-0.6, 0.45, -0.7)) * smoothstep(0.0, 0.7, night*night);
     float moonFactor = night * (1.0 - dawn) * (1.0 - dusk);
     float sunDot = saturate(dot(viewDir, sunDir));

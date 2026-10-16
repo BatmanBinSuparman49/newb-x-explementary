@@ -1,15 +1,16 @@
 {
   "name": "CloudTexture",
-  "reg1": 11,
-  "reg2": 11,
+  "register_slot": 13,
+  "binding_slot": 13,
   "type": "texture2D",
   "precision": "lowp",
   "access": "readonly",
   "texture_format": "",
   "default_texture": "",
-  "unordered_access": false,
-  "always_one": 1,
+  "unordered_access": true,
+  "slot_count": 1,
   "texture_path": "textures/newb/cloud_texture",
+  "unknown": 0,
   "sampler_state": {
     "filter": "Point",
     "wrapping": "Repeat"

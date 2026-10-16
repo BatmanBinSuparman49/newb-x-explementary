@@ -1,16 +1,17 @@
 {
   "name": "NoiseW",
-  "reg1": 8,
-  "reg2": 8,
+  "register_slot": 8,
+  "binding_slot": 8,
   "type": "texture2D",
   "precision": "highp",
   "access": "readonly",
   "texture_format": "",
   "default_texture": "",
   "unordered_access": false,
-  "always_one": 1,
+  "slot_count": 3,
   "texture_path": "textures/noise/noiseW.png",
-   "sampler_state": {
+  "unknown": 0,
+  "sampler_state": {
     "filter": "Bilinear",
     "wrapping": "Repeat"
   },

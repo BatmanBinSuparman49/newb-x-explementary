@@ -8,7 +8,7 @@
   "texture_format": "",
   "default_texture": "",
   "unordered_access": false,
-  "slot_count": 1,
+  "slot_count": 2,
   "texture_path": "textures/newb/noise_texture",
   "unknown": 0,
   "sampler_state": {

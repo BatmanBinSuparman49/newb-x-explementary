@@ -257,7 +257,7 @@ void main() {
       vec4 clouds = renderCloudsRounded(s_CloudTexture, viewDir, cloudPos, rain, ViewPositionAndTime.w, skycol.horizonEdge, skycol.zenith, NL_CLOUD_PARAMS(_)); 
     #endif 
   
-  if(DimensionID.x == 0.0) reflection = mix(reflection, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
+  if(!env.end && !env.nether) reflection = mix(reflection, clouds.rgb, clouds.a * smoothstep(0.05,1.0,viewDir.y));
 
   if(reflective && !water && !env.nether){
     reflection  += stars;

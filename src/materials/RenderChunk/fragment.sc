@@ -229,7 +229,9 @@ void main() {
 
   vec3 stars;
 
-  if(DimensionID.x == 0.0){
+  if(env.end){
+    stars = renderStarfield(viewDir, ViewPositionAndTime.w) * 0.5;
+  } else {
     vec3 fstars = vec3(0.0, 0.0, 0.0);
     vec2 starUV = viewDir.xz / (0.5 + viewDir.y);
     float starValue = star(starUV * NL_FALLING_STARS_SCALE, NL_FALLING_STARS_VELOCITY, NL_FALLING_STARS_DENSITY, ViewPositionAndTime.w);
@@ -240,8 +242,6 @@ void main() {
     vec3 gstars = NL_GALAXY_STARS * galaxyStars;
     gstars *= gstars;
     stars = (gstars * 2.1 * notBottom) + (fstars*0.7);
-  } else {
-    stars = renderStarfield(viewDir, ViewPositionAndTime.w) * 0.5; 
   }
 
   vec3 cloudPos;

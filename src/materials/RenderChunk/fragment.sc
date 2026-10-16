@@ -111,7 +111,7 @@ void main() {
       float dusk  = whatTime.z;
       float dawn  = whatTime.y;
 
-    float rain          = clamp(WeatherID.x, 0.0, 1.0);
+    float rain = mix(smoothstep(0.66, 0.3, FogAndDistanceControl.x), 0.0, step(FogAndDistanceControl.x, 0.0));
 
   nl_environment env = nlDetectEnvironment(FogColor.rgb, FogAndDistanceControl.xyz);
   nl_skycolor skycol;
